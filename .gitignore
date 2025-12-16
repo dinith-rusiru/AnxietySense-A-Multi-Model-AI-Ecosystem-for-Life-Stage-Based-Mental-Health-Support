@@ -1,0 +1,17 @@
+# python venv
+venv/
+.venv/
+env/
+
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# jupyter
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# common
+.DS_Store
