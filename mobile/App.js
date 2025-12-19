@@ -57,7 +57,7 @@ export default function App() {
         Alert.alert("Error", e.message || "Cannot connect to server");
       } finally {
         setLoading(false);
-      }
+      }  
     };
     loadMeta();
   }, []);
