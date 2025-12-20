@@ -1,0 +1,40 @@
+# Node / React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Expo
+.expo/
+.expo-shared/
+web-build/
+dist/
+build/
+
+# React Native
+android/app/build/
+ios/build/
+*.keystore
+*.jks
+
+# Environment files
+.env
+.env.*
+# python venv
+venv/
+.venv/
+env/
+
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# jupyter
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# common
+.DS_Store
