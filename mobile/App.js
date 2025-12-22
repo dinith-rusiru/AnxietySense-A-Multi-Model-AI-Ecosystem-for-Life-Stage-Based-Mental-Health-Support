@@ -11,25 +11,39 @@ import {
   Platform,
   UIManager,
   LayoutAnimation,
+  StatusBar,
 } from "react-native";
 
 // Android Emulator: http://10.0.2.2:8000
 // Real phone: http://YOUR_PC_LAN_IP:8000
 const API_BASE = "http://10.0.2.2:8000";
 
-
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const SCALE = [
-  { label: "Never (0)", value: 0, color: "#94A3B8" },   // slate
-  { label: "Sometimes (1)", value: 1, color: "#3B82F6" }, // blue
-  { label: "Often (2)", value: 2, color: "#F59E0B" },   // amber
-  { label: "Always (3)", value: 3, color: "#EF4444" },  // red
-];
+/** Green modern theme */
+const THEME = {
+  bg: "#071A16",          // deep green-black
+  surface: "#0B2A24",     // dark teal surface
+  surface2: "#0E352D",    // a bit lighter
+  border: "rgba(255,255,255,0.10)",
+  text: "rgba(255,255,255,0.92)",
+  subtext: "rgba(255,255,255,0.68)",
+  muted: "rgba(255,255,255,0.50)",
+  accent: "#22C55E",      // green
+  accent2: "#10B981",     // emerald
+  warn: "#F59E0B",
+  danger: "#EF4444",
+  cardRing: "rgba(34,197,94,0.20)",
+};
 
-const CARD_COLORS = ["#EEF2FF", "#ECFDF5", "#FFFBEB", "#FFF1F2", "#F5F3FF"];
+const SCALE = [
+  { label: "Never (0)", value: 0, dot: "#94A3B8" },
+  { label: "Sometimes (1)", value: 1, dot: "#22C55E" },
+  { label: "Often (2)", value: 2, dot: "#10B981" },
+  { label: "Always (3)", value: 3, dot: "#16A34A" },
+];
 
 export default function App() {
   const { width } = useWindowDimensions();
@@ -57,7 +71,7 @@ export default function App() {
         Alert.alert("Error", e.message || "Cannot connect to server");
       } finally {
         setLoading(false);
-      }  
+      }
     };
     loadMeta();
   }, []);
@@ -68,7 +82,6 @@ export default function App() {
       id: col,
       title: `Question ${idx + 1}`,
       subtitle: col,
-      bg: CARD_COLORS[idx % CARD_COLORS.length],
     }));
   }, [meta]);
 
@@ -89,7 +102,6 @@ export default function App() {
 
   const setOneAnswer = (index, value, autoAdvance = true) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
     setAnswers((prev) => {
       const copy = [...prev];
       copy[index] = value;
@@ -97,7 +109,7 @@ export default function App() {
     });
 
     if (autoAdvance && index < total - 1) {
-      setTimeout(() => goTo(index + 1), 180);
+      setTimeout(() => goTo(index + 1), 160);
     }
   };
 
@@ -118,9 +130,9 @@ export default function App() {
       setResult({
         score: data.predicted_score,
         levelNum: data.predicted_level_num,
+        method: data.method, // optional if your backend returns it
       });
     } catch (e) {
-
       Alert.alert("Error", e.message || "Prediction failed");
     } finally {
       setSubmitting(false);
@@ -137,84 +149,92 @@ export default function App() {
   const levelBadge = useMemo(() => {
     if (!result) return null;
     const map = {
-      0: { label: "Low", bg: "#ECFDF5", fg: "#065F46" },
-      1: { label: "Moderate", bg: "#FFFBEB", fg: "#92400E" },
-      2: { label: "High", bg: "#FFF1F2", fg: "#9F1239" },
+      0: { label: "Low", bg: "rgba(34,197,94,0.16)", fg: "#A7F3D0" },
+      1: { label: "Moderate", bg: "rgba(245,158,11,0.16)", fg: "#FDE68A" },
+      2: { label: "High", bg: "rgba(239,68,68,0.16)", fg: "#FCA5A5" },
     };
-    return map[result.levelNum] || { label: String(result.levelNum), bg: "#F1F5F9", fg: "#0F172A" };
+    return map[result.levelNum] || { label: String(result.levelNum), bg: "rgba(255,255,255,0.10)", fg: "white" };
   }, [result]);
 
+  // ---------- Loading ----------
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: THEME.bg, alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <StatusBar barStyle="light-content" />
         <ActivityIndicator />
-        <Text style={{ marginTop: 12, fontWeight: "700" }}>Loading questionnaire…</Text>
-        <Text style={{ marginTop: 6, color: "#64748B", textAlign: "center" }}>
-          Make sure your phone can reach: {API_BASE}
+        <Text style={{ marginTop: 12, fontWeight: "800", color: THEME.text }}>Loading questionnaire…</Text>
+        <Text style={{ marginTop: 6, color: THEME.subtext, textAlign: "center" }}>
+          Backend: {API_BASE}
         </Text>
       </SafeAreaView>
     );
   }
 
+  // ---------- No meta ----------
   if (!meta) {
     return (
-      <SafeAreaView style={{ flex: 1, padding: 16 }}>
-        <Text style={{ fontSize: 18, fontWeight: "800" }}>Cannot load questionnaire</Text>
-        <Text style={{ marginTop: 8, color: "#475569" }}>
-          Check API_BASE, ensure FastAPI is running, and your phone/emulator can reach it.
-        </Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: THEME.bg, padding: 16 }}>
+        <StatusBar barStyle="light-content" />
+        <View style={{ padding: 16, borderRadius: 18, backgroundColor: THEME.surface, borderWidth: 1, borderColor: THEME.border }}>
+          <Text style={{ fontSize: 18, fontWeight: "900", color: THEME.text }}>Cannot load questionnaire</Text>
+          <Text style={{ marginTop: 8, color: THEME.subtext, lineHeight: 18 }}>
+            Check API_BASE, ensure FastAPI is running, and your phone/emulator can reach it.
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
+  // ---------- Result screen ----------
   if (result) {
     return (
-      <SafeAreaView style={{ flex: 1, padding: 16, backgroundColor: "#0B1220" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: THEME.bg, padding: 16 }}>
+        <StatusBar barStyle="light-content" />
         <View
           style={{
             padding: 16,
-            borderRadius: 18,
-            backgroundColor: "#111B30",
+            borderRadius: 22,
+            backgroundColor: THEME.surface,
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.08)",
+            borderColor: THEME.cardRing,
+            shadowColor: "#000",
+            shadowOpacity: 0.25,
+            shadowRadius: 18,
+            shadowOffset: { width: 0, height: 12 },
+            elevation: 3,
           }}
         >
-          <Text style={{ fontSize: 22, fontWeight: "900", color: "white" }}>
-            Predicted Anxiety Score
+          <Text style={{ fontSize: 22, fontWeight: "900", color: THEME.text }}>
+            Anxiety Prediction
           </Text>
 
-          <View style={{ marginTop: 14, gap: 10 }}>
-            <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.85)" }}>
-              Score:{" "}
-              <Text style={{ fontWeight: "900", color: "white" }}>{result.score}</Text> 
-             
+          <View style={{ marginTop: 14 }}>
+            <Text style={{ fontSize: 14, color: THEME.subtext }}>Predicted score</Text>
+            <Text style={{ marginTop: 4, fontSize: 34, fontWeight: "900", color: "white" }}>
+              {result.score}
+              <Text style={{ fontSize: 16, color: THEME.muted }}> / {meta.max_score ?? 57}</Text>
             </Text>
-
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.85)" }}>
-                Level:
-              </Text>
-              <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: levelBadge.bg }}>
-                <Text style={{ fontWeight: "900", color: levelBadge.fg }}>{levelBadge.label}</Text>
-              </View>
-              <Text style={{ color: "rgba(255,255,255,0.55)" }}>
-                (0=low, 1=moderate, 2=high)
-              </Text>
-            </View>
           </View>
 
-          <View
-            style={{
-              marginTop: 16,
-              padding: 12,
-              backgroundColor: "rgba(255,255,255,0.06)",
-              borderRadius: 14,
-            }}
-          >
-            <Text style={{ fontWeight: "800", color: "white" }}>Note</Text>
-            <Text style={{ marginTop: 6, color: "rgba(255,255,255,0.78)", lineHeight: 18 }}>
-              This is a screening prediction (not a diagnosis). If the child is distressed, seek help
-              from a qualified professional.
+          <View style={{ marginTop: 10, flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: levelBadge.bg, borderWidth: 1, borderColor: "rgba(255,255,255,0.10)" }}>
+              <Text style={{ fontWeight: "900", color: levelBadge.fg }}>{levelBadge.label}</Text>
+            </View>
+            <Text style={{ color: THEME.subtext }}>
+              (0 low • 1 moderate • 2 high)
+            </Text>
+          </View>
+
+          {typeof result.method === "string" ? (
+            <Text style={{ marginTop: 10, color: THEME.subtext }}>
+              Method: <Text style={{ fontWeight: "800", color: "white" }}>{result.method}</Text>
+            </Text>
+          ) : null}
+
+          <View style={{ marginTop: 16, padding: 12, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: THEME.border }}>
+            <Text style={{ fontWeight: "900", color: THEME.text }}>Note</Text>
+            <Text style={{ marginTop: 6, color: THEME.subtext, lineHeight: 18 }}>
+              This is a screening prediction (not a diagnosis). If the child is distressed, please contact a qualified professional.
             </Text>
           </View>
         </View>
@@ -224,51 +244,61 @@ export default function App() {
           style={{
             marginTop: 16,
             padding: 14,
-            borderRadius: 14,
-            backgroundColor: "white",
+            borderRadius: 16,
+            backgroundColor: THEME.accent,
           }}
         >
-          <Text style={{ textAlign: "center", fontWeight: "900" }}>Start Again</Text>
+          <Text style={{ textAlign: "center", fontWeight: "900", color: "#062016" }}>
+            Start Again
+          </Text>
         </Pressable>
       </SafeAreaView>
     );
   }
 
+  // ---------- Question card ----------
   const renderQuestion = ({ item, index }) => {
     const selectedVal = answers[index];
 
     return (
-      <View style={{ width, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 }}>
+      <View style={{ width, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 22 }}>
         <View
           style={{
-            borderRadius: 20,
+            borderRadius: 22,
             padding: 16,
-            backgroundColor: item.bg,
+            backgroundColor: THEME.surface,
             borderWidth: 1,
-            borderColor: "rgba(15,23,42,0.08)",
+            borderColor: THEME.border,
             shadowColor: "#000",
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.22,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 10 },
             elevation: 2,
           }}
         >
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontWeight: "900", fontSize: 16, color: "#0F172A" }}>
-              {item.title}
-            </Text>
-            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: "rgba(15,23,42,0.08)" }}>
-              <Text style={{ fontWeight: "900", color: "#0F172A" }}>
+            <Text style={{ fontWeight: "900", fontSize: 16, color: THEME.text }}>{item.title}</Text>
+            <View
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 999,
+                backgroundColor: "rgba(34,197,94,0.12)",
+                borderWidth: 1,
+                borderColor: "rgba(34,197,94,0.22)",
+              }}
+            >
+              <Text style={{ fontWeight: "900", color: "#A7F3D0" }}>
                 {index + 1}/{total}
               </Text>
             </View>
           </View>
 
-          <Text style={{ marginTop: 6, color: "#334155" }}>
+          <Text style={{ marginTop: 6, color: THEME.subtext }}>
             ({item.subtitle})
           </Text>
 
-          <Text style={{ marginTop: 14, fontWeight: "800", color: "#0F172A" }}>
+          <Text style={{ marginTop: 14, fontWeight: "900", color: THEME.text }}>
             Choose an answer:
           </Text>
 
@@ -281,25 +311,25 @@ export default function App() {
                   onPress={() => setOneAnswer(index, s.value, true)}
                   style={{
                     padding: 14,
-                    borderRadius: 16,
-                    borderWidth: 2,
-                    borderColor: selected ? s.color : "rgba(15,23,42,0.10)",
-                    backgroundColor: selected ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.55)",
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    borderColor: selected ? "rgba(34,197,94,0.55)" : "rgba(255,255,255,0.10)",
+                    backgroundColor: selected ? "rgba(34,197,94,0.14)" : "rgba(255,255,255,0.06)",
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
                   }}
                 >
-                  <Text style={{ fontWeight: selected ? "900" : "700", color: "#0F172A" }}>
+                  <Text style={{ fontWeight: selected ? "900" : "700", color: THEME.text }}>
                     {s.label}
                   </Text>
 
                   <View
                     style={{
-                      width: 14,
-                      height: 14,
+                      width: 12,
+                      height: 12,
                       borderRadius: 999,
-                      backgroundColor: s.color,
+                      backgroundColor: s.dot,
                       opacity: selected ? 1 : 0.35,
                     }}
                   />
@@ -312,31 +342,37 @@ export default function App() {
     );
   };
 
+  // ---------- Main ----------
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0B1220" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: THEME.bg }}>
+      <StatusBar barStyle="light-content" />
+
       {/* Header */}
       <View style={{ padding: 16, paddingBottom: 10 }}>
-        <Text style={{ fontSize: 22, fontWeight: "900", color: "white" }}>
+        <Text style={{ fontSize: 22, fontWeight: "900", color: THEME.text }}>
           Child Anxiety Questionnaire
         </Text>
-        <Text style={{ marginTop: 6, color: "rgba(255,255,255,0.72)" }}>
-          Swipe or use Next/Back. Choose 0–3.
+        <Text style={{ marginTop: 6, color: THEME.subtext }}>
+          Swipe or tap Next/Back • choose 0–3
         </Text>
 
-        {/* Progress bar */}
-        <View style={{ marginTop: 12, height: 10, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.10)" }}>
+        {/* Progress */}
+        <View style={{ marginTop: 12, height: 10, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
           <View
             style={{
               height: 10,
-              borderRadius: 999,
               width: `${Math.round(progress * 100)}%`,
-              backgroundColor: "white",
+              backgroundColor: THEME.accent,
             }}
           />
         </View>
+
+        <Text style={{ marginTop: 8, color: THEME.muted, fontWeight: "700" }}>
+          Progress: {Math.round(progress * 100)}%
+        </Text>
       </View>
 
-      {/* Moving questions (swipe horizontally) */}
+      {/* Questions */}
       <FlatList
         ref={listRef}
         data={questions}
@@ -353,7 +389,7 @@ export default function App() {
         getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
       />
 
-      {/* Bottom navigation */}
+      {/* Bottom nav */}
       <View style={{ padding: 16, paddingTop: 10, gap: 10 }}>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Pressable
@@ -362,13 +398,14 @@ export default function App() {
             style={{
               flex: 1,
               padding: 14,
-              borderRadius: 14,
-              backgroundColor: currentIndex === 0 ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.14)",
+              borderRadius: 16,
+              backgroundColor: "rgba(255,255,255,0.06)",
               borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.14)",
+              borderColor: THEME.border,
+              opacity: currentIndex === 0 ? 0.45 : 1,
             }}
           >
-            <Text style={{ textAlign: "center", fontWeight: "900", color: "white", opacity: currentIndex === 0 ? 0.45 : 1 }}>
+            <Text style={{ textAlign: "center", fontWeight: "900", color: THEME.text }}>
               Back
             </Text>
           </Pressable>
@@ -380,11 +417,11 @@ export default function App() {
               style={{
                 flex: 1,
                 padding: 14,
-                borderRadius: 14,
-                backgroundColor: "white",
+                borderRadius: 16,
+                backgroundColor: THEME.accent,
               }}
             >
-              <Text style={{ textAlign: "center", fontWeight: "900", color: "#0B1220" }}>
+              <Text style={{ textAlign: "center", fontWeight: "900", color: "#062016" }}>
                 Next
               </Text>
             </Pressable>
@@ -395,11 +432,11 @@ export default function App() {
               style={{
                 flex: 1,
                 padding: 14,
-                borderRadius: 14,
-                backgroundColor: submitting ? "rgba(255,255,255,0.35)" : "white",
+                borderRadius: 16,
+                backgroundColor: submitting ? "rgba(34,197,94,0.35)" : THEME.accent,
               }}
             >
-              <Text style={{ textAlign: "center", fontWeight: "900", color: "#0B1220" }}>
+              <Text style={{ textAlign: "center", fontWeight: "900", color: "#062016" }}>
                 {submitting ? "Predicting…" : "Predict Score"}
               </Text>
             </Pressable>
@@ -411,13 +448,13 @@ export default function App() {
           disabled={submitting}
           style={{
             padding: 12,
-            borderRadius: 14,
-            backgroundColor: "rgba(255,255,255,0.10)",
+            borderRadius: 16,
+            backgroundColor: "rgba(255,255,255,0.06)",
             borderWidth: 1,
-            borderColor: "rgba(255,255,255,0.14)",
+            borderColor: THEME.border,
           }}
         >
-          <Text style={{ textAlign: "center", fontWeight: "800", color: "rgba(255,255,255,0.85)" }}>
+          <Text style={{ textAlign: "center", fontWeight: "800", color: THEME.subtext }}>
             Reset Answers
           </Text>
         </Pressable>
