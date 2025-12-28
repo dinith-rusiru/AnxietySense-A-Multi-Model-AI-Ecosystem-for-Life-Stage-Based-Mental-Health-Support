@@ -1,0 +1,60 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# PyTorch Models
+*.pth
+*.pt
+*.ckpt
+*.h5
+
+# Data
+images/
+data/
+datasets/
+*.csv
+*.xlsx
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+
+# python venv
+venv/
+.venv/
+env/
+
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# jupyter
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# common
+.DS_Store
