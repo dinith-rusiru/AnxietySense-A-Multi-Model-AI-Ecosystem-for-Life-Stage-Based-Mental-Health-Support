@@ -200,48 +200,206 @@ export default function App() {
 /* =======================
    STYLES
    ======================= */
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#062e2a",
+//     padding: 20,
+//   },
+
+//   appTitle: {
+//     fontSize: 22,
+//     fontWeight: "bold",
+//     color: "#ecfeff",
+//     marginBottom: 6,
+//   },
+
+//   progressText: {
+//     color: "#9fffe0",
+//     marginBottom: 6,
+//     fontSize: 12,
+//   },
+
+//   progressPercent: {
+//     color: "#7dd3c7",
+//     marginBottom: 20,
+//     fontSize: 12,
+//   },
+
+//   progressBar: {
+//     height: 6,
+//     backgroundColor: "#134e4a",
+//     borderRadius: 5,
+//   },
+
+//   progressFill: {
+//     height: "100%",
+//     backgroundColor: "#22c55e",
+//     borderRadius: 5,
+//   },
+
+//   card: {
+//     backgroundColor: "#0f3f3a",
+//     borderRadius: 16,
+//     padding: 20,
+//   },
+
+//   headerRow: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     marginBottom: 10,
+//   },
+
+//   questionTitle: {
+//     fontSize: 20,
+//     color: "#ecfeff",
+//     fontWeight: "bold",
+//   },
+
+//   counter: {
+//     backgroundColor: "#134e4a",
+//     paddingHorizontal: 12,
+//     paddingVertical: 4,
+//     borderRadius: 20,
+//   },
+
+//   counterText: {
+//     color: "#a7f3d0",
+//     fontSize: 12,
+//   },
+
+//   questionText: {
+//     color: "#ecfeff",
+//     fontSize: 16,
+//     lineHeight: 22,
+//     marginBottom: 16,
+//   },
+
+//   chooseText: {
+//     color: "#a7f3d0",
+//     marginBottom: 14,
+//   },
+
+//   option: {
+//     backgroundColor: "#134e4a",
+//     padding: 14,
+//     borderRadius: 14,
+//     marginBottom: 10,
+//   },
+
+//   selected: {
+//     backgroundColor: "#22c55e",
+//   },
+
+//   optionText: {
+//     color: "#ecfeff",
+//     fontSize: 16,
+//   },
+
+//   nav: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginTop: 20,
+//   },
+
+//   navButton: {
+//     backgroundColor: "#134e4a",
+//     padding: 14,
+//     borderRadius: 14,
+//     width: "45%",
+//     alignItems: "center",
+//   },
+
+//   submitButton: {
+//     backgroundColor: "#22c55e",
+//     padding: 14,
+//     borderRadius: 14,
+//     width: "45%",
+//     alignItems: "center",
+//   },
+
+//   disabled: {
+//     opacity: 0.5,
+//   },
+
+//   navText: {
+//     color: "#ecfeff",
+//     fontWeight: "bold",
+//   },
+
+//   reset: {
+//     marginTop: 16,
+//     alignItems: "center",
+//   },
+
+//   resetText: {
+//     color: "#7dd3c7",
+//     fontSize: 12,
+//   },
+
+//   resultTitle: {
+//     fontSize: 24,
+//     color: "#ecfeff",
+//     fontWeight: "bold",
+//     textAlign: "center",
+//     marginBottom: 20,
+//   },
+
+//   resultText: {
+//     fontSize: 20,
+//     color: "#a7f3d0",
+//     textAlign: "center",
+//     marginBottom: 10,
+//   },
+// });
+
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#062e2a",
+    backgroundColor: "#ffffff",
     padding: 20,
   },
 
   appTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#ecfeff",
+    color: "#0f172a",
     marginBottom: 6,
   },
 
   progressText: {
-    color: "#9fffe0",
+    color: "#475569",
     marginBottom: 6,
     fontSize: 12,
   },
 
   progressPercent: {
-    color: "#7dd3c7",
+    color: "#64748b",
     marginBottom: 20,
     fontSize: 12,
   },
 
   progressBar: {
     height: 6,
-    backgroundColor: "#134e4a",
+    backgroundColor: "#e5e7eb",
     borderRadius: 5,
   },
 
   progressFill: {
     height: "100%",
-    backgroundColor: "#22c55e",
+    backgroundColor: "#2563eb",
     borderRadius: 5,
   },
 
   card: {
-    backgroundColor: "#0f3f3a",
+    backgroundColor: "#f8fafc",
     borderRadius: 16,
     padding: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
 
   headerRow: {
@@ -253,47 +411,50 @@ const styles = StyleSheet.create({
 
   questionTitle: {
     fontSize: 20,
-    color: "#ecfeff",
+    color: "#0f172a",
     fontWeight: "bold",
   },
 
   counter: {
-    backgroundColor: "#134e4a",
+    backgroundColor: "#e5e7eb",
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 20,
   },
 
   counterText: {
-    color: "#a7f3d0",
+    color: "#334155",
     fontSize: 12,
   },
 
   questionText: {
-    color: "#ecfeff",
+    color: "#1e293b",
     fontSize: 16,
     lineHeight: 22,
     marginBottom: 16,
   },
 
   chooseText: {
-    color: "#a7f3d0",
+    color: "#475569",
     marginBottom: 14,
   },
 
   option: {
-    backgroundColor: "#134e4a",
+    backgroundColor: "#ffffff",
     padding: 14,
     borderRadius: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
   },
 
   selected: {
-    backgroundColor: "#22c55e",
+    backgroundColor: "#2563eb",
+    borderColor: "#2563eb",
   },
 
   optionText: {
-    color: "#ecfeff",
+    color: "#0f172a",
     fontSize: 16,
   },
 
@@ -304,7 +465,7 @@ const styles = StyleSheet.create({
   },
 
   navButton: {
-    backgroundColor: "#134e4a",
+    backgroundColor: "#a7a9acff",
     padding: 14,
     borderRadius: 14,
     width: "45%",
@@ -312,7 +473,7 @@ const styles = StyleSheet.create({
   },
 
   submitButton: {
-    backgroundColor: "#22c55e",
+    backgroundColor: "#447af0ff",
     padding: 14,
     borderRadius: 14,
     width: "45%",
@@ -324,7 +485,7 @@ const styles = StyleSheet.create({
   },
 
   navText: {
-    color: "#ecfeff",
+    color: "#000000",
     fontWeight: "bold",
   },
 
@@ -334,13 +495,13 @@ const styles = StyleSheet.create({
   },
 
   resetText: {
-    color: "#7dd3c7",
+    color: "#000000ff",
     fontSize: 12,
   },
 
   resultTitle: {
     fontSize: 24,
-    color: "#ecfeff",
+    color: "#0f172a",
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 20,
@@ -348,7 +509,7 @@ const styles = StyleSheet.create({
 
   resultText: {
     fontSize: 20,
-    color: "#a7f3d0",
+    color: "#101214ff",
     textAlign: "center",
     marginBottom: 10,
   },
