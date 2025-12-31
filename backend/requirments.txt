@@ -3,3 +3,8 @@ uvicorn
 pandas
 scikit-learn
 joblib
+librosa
+numpy
+soundfile
+scikit-learn
+python-multipart

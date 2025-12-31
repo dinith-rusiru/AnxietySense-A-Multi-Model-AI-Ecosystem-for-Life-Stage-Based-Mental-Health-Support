@@ -49,7 +49,7 @@ export default function WelcomeScreen({ navigation }) {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("Instructions")}
+        onPress={() => navigation.navigate("Voice")}
       >
         <Text style={styles.buttonText}>Let’s Go</Text>
       </TouchableOpacity>
