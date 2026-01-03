@@ -18,6 +18,8 @@ app.add_middleware(
 
 model = load_model("model/emotion_detection_model.h5")
 
+# model = load_model("model/model.h5")
+
 EMOTIONS = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
 @app.post("/predict")
