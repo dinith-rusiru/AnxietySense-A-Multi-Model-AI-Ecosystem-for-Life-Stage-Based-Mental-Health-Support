@@ -205,7 +205,7 @@ export default function QuestionnaireScreen({ navigation }) {
     answers.forEach((v, i) => (payload[`Q${i + 1}`] = v));
 
     try {
-      const response = await fetch("http://10.0.2.2:8000/predict", {
+      const response = await fetch("http://10.0.2.2:8000/dass21/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
