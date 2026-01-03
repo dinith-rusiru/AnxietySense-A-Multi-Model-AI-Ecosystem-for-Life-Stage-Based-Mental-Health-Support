@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 from main import app as dass_app
-from faceemotion import app as emotion_app
+from face import app as emotion_app
 
 app = FastAPI(title="AnxietySense Unified Backend")
 
