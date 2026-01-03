@@ -262,36 +262,348 @@
 // });
 
 
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+// import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+// import { useState } from "react";
+// import { passQuestions } from "../data/passQuestions";
+// import { predictScore } from "../api/api";
+
+// export default function QuestionnaireScreen({ navigation }) {
+//   const [index, setIndex] = useState(0);
+//   const [answers, setAnswers] = useState({});
+//   const [loading, setLoading] = useState(false);
+
+//   // -------------------------------
+//   // Handle score selection
+//   // -------------------------------
+//   const selectScore = (score) => {
+//     const updatedAnswers = {
+//       ...answers,
+//       [`Q${index + 1}`]: score,
+//     };
+
+//     setAnswers(updatedAnswers);
+
+//     // Move to next question ONLY (no auto-submit)
+//     if (index < passQuestions.length - 1) {
+//       setIndex(index + 1);
+//     }
+//   };
+
+//   // -------------------------------
+//   // Submit after all 31 questions
+//   // -------------------------------
+//   const submit = async () => {
+//     if (Object.keys(answers).length !== 31) {
+//       Alert.alert("Incomplete", "Please answer all 31 questions");
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+//       const response = await predictScore(answers);
+//       setLoading(false);
+
+//       navigation.navigate("Result", response.data);
+//     } catch (error) {
+//       setLoading(false);
+//       Alert.alert("Error", "Failed to get prediction");
+//       console.log(error.response?.data || error.message);
+//     }
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       {/* Progress */}
+//       <Text style={styles.progress}>
+//         Question {index + 1} / 31
+//       </Text>
+
+//       {/* Question */}
+//       <Text style={styles.question}>
+//         {passQuestions[index]}
+//       </Text>
+
+//       {/* Options */}
+//       <View style={styles.options}>
+//         {[0, 1, 2, 3].map((value) => (
+//           <TouchableOpacity
+//             key={value}
+//             style={[
+//               styles.option,
+//               answers[`Q${index + 1}`] === value && styles.selectedOption,
+//             ]}
+//             onPress={() => selectScore(value)}
+//           >
+//             <Text style={styles.optionText}>{value}</Text>
+//           </TouchableOpacity>
+//         ))}
+//       </View>
+
+//       {/* Submit button (ONLY after last question) */}
+//       {index === passQuestions.length - 1 && (
+//         <TouchableOpacity
+//           style={styles.submitButton}
+//           onPress={submit}
+//           disabled={loading}
+//         >
+//           {loading ? (
+//             <ActivityIndicator color="#fff" />
+//           ) : (
+//             <Text style={styles.submitText}>Submit Questionnaire</Text>
+//           )}
+//         </TouchableOpacity>
+//       )}
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     padding: 25,
+//     justifyContent: "center",
+//     backgroundColor: "#FFFFFF",
+//   },
+//   progress: {
+//     fontSize: 14,
+//     color: "#999",
+//     marginBottom: 10,
+//   },
+//   question: {
+//     fontSize: 20,
+//     fontWeight: "600",
+//     marginBottom: 30,
+//     color: "#2C3E50",
+//   },
+//   options: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginBottom: 40,
+//   },
+//   option: {
+//     backgroundColor: "#EAF2F8",
+//     padding: 20,
+//     borderRadius: 12,
+//     width: "22%",
+//     alignItems: "center",
+//   },
+//   selectedOption: {
+//     backgroundColor: "#5DADE2",
+//   },
+//   optionText: {
+//     fontSize: 18,
+//     fontWeight: "bold",
+//     color: "#2C3E50",
+//   },
+//   submitButton: {
+//     backgroundColor: "#2ECC71",
+//     padding: 15,
+//     borderRadius: 12,
+//     alignItems: "center",
+//   },
+//   submitText: {
+//     color: "#FFFFFF",
+//     fontSize: 18,
+//     fontWeight: "600",
+//   },
+// });
+
+// import {
+//   View,
+//   Text,
+//   TouchableOpacity,
+//   StyleSheet,
+//   Alert,
+//   ActivityIndicator,
+// } from "react-native";
+// import { useState } from "react";
+// import axios from "axios";
+// import { passQuestions } from "../data/passQuestions";
+
+// export default function QuestionnaireScreen({ navigation, route }) {
+//   // ✅ SAFE fallback (NO CRASH)
+//   const emotion = route?.params?.emotion ?? "neutral";
+
+//   const [index, setIndex] = useState(0);
+//   const [answers, setAnswers] = useState({});
+//   const [loading, setLoading] = useState(false);
+
+//   const selectScore = (score) => {
+//     const updatedAnswers = {
+//       ...answers,
+//       [`Q${index + 1}`]: score,
+//     };
+
+//     setAnswers(updatedAnswers);
+
+//     if (index < passQuestions.length - 1) {
+//       setIndex(index + 1);
+//     }
+//   };
+
+//   const submit = async () => {
+//     if (Object.keys(answers).length !== 31) {
+//       Alert.alert("Incomplete", "Please answer all 31 questions");
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+
+//       const response = await axios.post(
+//         "http://10.0.2.2:8000/anxiety/final",
+//         {
+//           answers,
+//           emotion, // ✅ VOICE EMOTION INCLUDED
+//         }
+//       );
+
+//       setLoading(false);
+
+//       navigation.navigate("Result", {
+//         questionnaire_score: response.data.questionnaire_score,
+//         final_score: response.data.final_score,
+//         anxiety_level: response.data.anxiety_level,
+//         emotion: response.data.emotion,
+//       });
+
+//     } catch (error) {
+//       setLoading(false);
+//       Alert.alert("Error", "Failed to get anxiety prediction");
+//       console.log(error.response?.data || error.message);
+//     }
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       <Text style={styles.progress}>
+//         Question {index + 1} / 31
+//       </Text>
+
+//       <Text style={styles.question}>
+//         {passQuestions[index]}
+//       </Text>
+
+//       <View style={styles.options}>
+//         {[0, 1, 2, 3].map((value) => (
+//           <TouchableOpacity
+//             key={value}
+//             style={[
+//               styles.option,
+//               answers[`Q${index + 1}`] === value && styles.selectedOption,
+//             ]}
+//             onPress={() => selectScore(value)}
+//           >
+//             <Text style={styles.optionText}>{value}</Text>
+//           </TouchableOpacity>
+//         ))}
+//       </View>
+
+//       {index === passQuestions.length - 1 && (
+//         <TouchableOpacity
+//           style={styles.submitButton}
+//           onPress={submit}
+//           disabled={loading}
+//         >
+//           {loading ? (
+//             <ActivityIndicator color="#fff" />
+//           ) : (
+//             <Text style={styles.submitText}>Submit Questionnaire</Text>
+//           )}
+//         </TouchableOpacity>
+//       )}
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     padding: 25,
+//     justifyContent: "center",
+//     backgroundColor: "#FFFFFF",
+//   },
+//   progress: {
+//     fontSize: 14,
+//     color: "#999",
+//     marginBottom: 10,
+//   },
+//   question: {
+//     fontSize: 20,
+//     fontWeight: "600",
+//     marginBottom: 30,
+//     color: "#2C3E50",
+//   },
+//   options: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginBottom: 40,
+//   },
+//   option: {
+//     backgroundColor: "#EAF2F8",
+//     padding: 20,
+//     borderRadius: 12,
+//     width: "22%",
+//     alignItems: "center",
+//   },
+//   selectedOption: {
+//     backgroundColor: "#5DADE2",
+//   },
+//   optionText: {
+//     fontSize: 18,
+//     fontWeight: "bold",
+//     color: "#2C3E50",
+//   },
+//   submitButton: {
+//     backgroundColor: "#2ECC71",
+//     padding: 15,
+//     borderRadius: 12,
+//     alignItems: "center",
+//   },
+//   submitText: {
+//     color: "#FFFFFF",
+//     fontSize: 18,
+//     fontWeight: "600",
+//   },
+// });
+
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { useState } from "react";
 import { passQuestions } from "../data/passQuestions";
-import { predictScore } from "../api/api";
+import { finalAnxietyPrediction } from "../api/api";
 
-export default function QuestionnaireScreen({ navigation }) {
+export default function QuestionnaireScreen({ navigation, route }) {
+  // ✅ Safe fallback
+  const emotion = route?.params?.emotion ?? "neutral";
+
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // -------------------------------
-  // Handle score selection
-  // -------------------------------
+  /* -------------------------------
+     Handle answer selection
+  -------------------------------- */
   const selectScore = (score) => {
-    const updatedAnswers = {
-      ...answers,
+    setAnswers((prev) => ({
+      ...prev,
       [`Q${index + 1}`]: score,
-    };
+    }));
 
-    setAnswers(updatedAnswers);
-
-    // Move to next question ONLY (no auto-submit)
     if (index < passQuestions.length - 1) {
       setIndex(index + 1);
     }
   };
 
-  // -------------------------------
-  // Submit after all 31 questions
-  // -------------------------------
+  /* -------------------------------
+     Submit questionnaire
+  -------------------------------- */
   const submit = async () => {
     if (Object.keys(answers).length !== 31) {
       Alert.alert("Incomplete", "Please answer all 31 questions");
@@ -300,30 +612,35 @@ export default function QuestionnaireScreen({ navigation }) {
 
     try {
       setLoading(true);
-      const response = await predictScore(answers);
+
+      const response = await finalAnxietyPrediction(answers, emotion);
+
       setLoading(false);
 
-      navigation.navigate("Result", response.data);
+      navigation.navigate("Result", {
+        questionnaire_score: response.data.questionnaire_score,
+        final_score: response.data.final_score,
+        anxiety_level: response.data.anxiety_level,
+        emotion: response.data.emotion,
+      });
+
     } catch (error) {
       setLoading(false);
-      Alert.alert("Error", "Failed to get prediction");
+      Alert.alert("Error", "Failed to get anxiety prediction");
       console.log(error.response?.data || error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Progress */}
       <Text style={styles.progress}>
         Question {index + 1} / 31
       </Text>
 
-      {/* Question */}
       <Text style={styles.question}>
         {passQuestions[index]}
       </Text>
 
-      {/* Options */}
       <View style={styles.options}>
         {[0, 1, 2, 3].map((value) => (
           <TouchableOpacity
@@ -339,7 +656,6 @@ export default function QuestionnaireScreen({ navigation }) {
         ))}
       </View>
 
-      {/* Submit button (ONLY after last question) */}
       {index === passQuestions.length - 1 && (
         <TouchableOpacity
           style={styles.submitButton}
@@ -357,6 +673,9 @@ export default function QuestionnaireScreen({ navigation }) {
   );
 }
 
+/* ===============================
+   STYLES
+================================ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

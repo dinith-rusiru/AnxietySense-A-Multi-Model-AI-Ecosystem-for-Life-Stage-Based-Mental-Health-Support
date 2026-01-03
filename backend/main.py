@@ -853,6 +853,14 @@ BASE_DIR = os.path.dirname(__file__)
 TEMP_DIR = os.path.join(BASE_DIR, "temp_audio")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
+STORAGE_DIR = os.path.join(BASE_DIR, "stored_data")
+AUDIO_STORE_DIR = os.path.join(STORAGE_DIR, "audio")
+RESULT_STORE_DIR = os.path.join(STORAGE_DIR, "results")
+
+os.makedirs(AUDIO_STORE_DIR, exist_ok=True)
+os.makedirs(RESULT_STORE_DIR, exist_ok=True)
+
+
 # Questionnaire
 SVM_MODEL_PATH = os.path.join(BASE_DIR, "model", "svm_total_score_model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "model", "scaler.pkl")
@@ -921,47 +929,106 @@ def emotion_weight(emotion):
 async def analyze_voice(file: UploadFile = File(...)):
     try:
         uid = str(uuid.uuid4())
-        m4a_path = os.path.join(TEMP_DIR, f"{uid}.m4a")
-        wav_path = os.path.join(TEMP_DIR, f"{uid}.wav")
 
-        # Save uploaded file
-        with open(m4a_path, "wb") as f:
+        # Save file with original extension
+        file_ext = file.filename.split(".")[-1]
+        temp_audio_path = os.path.join(TEMP_DIR, f"{uid}.{file_ext}")
+
+        with open(temp_audio_path, "wb") as f:
             f.write(await file.read())
 
-        convert_m4a_to_wav(m4a_path, wav_path)
+        # -----------------------------
+        # GENDER FEATURE EXTRACTION
+        # -----------------------------
+        gender_features = extract_gender_features(temp_audio_path)
 
-        # -----------------------------
-        # Gender prediction
-        # -----------------------------
-        gender_features = extract_gender_features(wav_path)
         if gender_features is None:
-            return {"success": False, "error": "No valid voice detected"}
+            return {
+                "success": False,
+                "error": "Audio too short or invalid voice input"
+            }
 
-        gender_scaled = gender_scaler.transform(gender_features.reshape(1, -1))
+        # -----------------------------
+        # SILENCE CHECK (FIXED)
+        # -----------------------------
+        rms_energy = gender_features[26]  # RMS energy index
+
+        if rms_energy < 0.001:
+            return {
+                "success": False,
+                "error": "No voice detected. Please speak clearly."
+            }
+
+        # -----------------------------
+        # GENDER PREDICTION
+        # -----------------------------
+        gender_scaled = gender_scaler.transform(
+            gender_features.reshape(1, -1)
+        )
         gender_pred = gender_model.predict(gender_scaled)[0]
         gender = "female" if gender_pred == 1 else "male"
 
         # -----------------------------
-        # Emotion prediction
+        # EMOTION PREDICTION
         # -----------------------------
-        emotion_features = extract_emotion_features(wav_path)
-        emotion_input = np.expand_dims(emotion_features, axis=(0,2))  # shape (1,40,1)
+        emotion_features = extract_emotion_features(temp_audio_path)
+
+        if emotion_features is None:
+            return {
+                "success": False,
+                "error": "Could not extract emotion features"
+            }
+
+        emotion_input = np.expand_dims(emotion_features, axis=(0, 2))
         emotion_probs = emotion_model.predict(emotion_input)
-        emotion_idx = np.argmax(emotion_probs)
+        emotion_idx = int(np.argmax(emotion_probs))
         emotion = emotion_encoder.inverse_transform([emotion_idx])[0]
 
         # -----------------------------
-        # Response
+        # STORE AUDIO (PERMANENT)
+        # -----------------------------
+        stored_audio_path = os.path.join(
+            AUDIO_STORE_DIR, f"{uid}.{file_ext}"
+        )
+        os.replace(temp_audio_path, stored_audio_path)
+
+        # -----------------------------
+        # STORE RESULT (JSON)
+        # -----------------------------
+        from datetime import datetime
+        import json
+
+        result_data = {
+            "id": uid,
+            "timestamp": datetime.utcnow().isoformat(),
+            "gender": gender,
+            "emotion": emotion,
+            "allowed": gender == "female",
+            "audio_file": f"{uid}.{file_ext}"
+        }
+
+        result_path = os.path.join(
+            RESULT_STORE_DIR, f"{uid}.json"
+        )
+
+        with open(result_path, "w") as f:
+            json.dump(result_data, f, indent=4)
+
+        # -----------------------------
+        # RESPONSE
         # -----------------------------
         return {
             "success": True,
             "gender": gender,
             "emotion": emotion,
-            "allowed": gender=="female"
+            "allowed": gender == "female"
         }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 # -----------------------------
 # QUESTIONNAIRE FINAL ANXIETY

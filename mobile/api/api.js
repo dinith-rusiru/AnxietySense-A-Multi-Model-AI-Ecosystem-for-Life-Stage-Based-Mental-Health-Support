@@ -165,37 +165,133 @@
 // export default API;
 
 
-import axios from "axios";
+// import axios from "axios";
 
+// const API = axios.create({
+//   baseURL: "http://10.0.2.2:8000",
+// });
+
+// /* -------------------------------
+//    Questionnaire
+// -------------------------------- */
+// export const predictScore = (answers) => {
+//   return API.post("/predict", {
+//     features: answers,
+//   });
+// };
+
+// /* -------------------------------
+//    Voice Analysis (Gender)
+// -------------------------------- */
+// export const analyzeVoice = async (audioUri) => {
+//   const formData = new FormData();
+
+//   formData.append("file", {
+//     uri: audioUri,
+//     name: "voice.wav",
+//     type: "audio/wav",
+//   });
+
+//   return API.post("/voice/analyze", formData, {
+//     headers: {
+//       "Content-Type": "multipart/form-data",
+//     },
+//   });
+// };
+
+// export default API;
+
+
+// import axios from "axios";
+
+// /* ===============================
+//    AXIOS INSTANCE
+// ================================ */
+// const API = axios.create({
+//   baseURL: "http://10.0.2.2:8000", // Android Emulator
+//   timeout: 60000,
+// });
+
+// /* ===============================
+//    🎤 VOICE ANALYSIS
+// ================================ */
+// export const analyzeVoice = async (audioUri) => {
+//   const formData = new FormData();
+
+//   const fileExtension = audioUri.split(".").pop().toLowerCase();
+
+//   formData.append("file", {
+//     uri: audioUri,
+//     name: `voice.${fileExtension}`,
+//     type: `audio/${fileExtension}`,
+//   });
+
+//   return API.post("/voice/analyze", formData, {
+//     headers: {
+//       "Content-Type": "multipart/form-data",
+//     },
+//   });
+// };
+
+// /* ===============================
+//    🧠 FINAL ANXIETY PREDICTION
+// ================================ */
+// export const finalAnxietyPrediction = (answers, emotion) => {
+//   return API.post("/anxiety/final", {
+//     answers: answers,
+//     emotion: emotion,
+//   });
+// };
+
+// export default API;
+
+
+import axios from "axios";
+import { Platform } from "react-native";
+
+/* ===============================
+   BASE URL (AUTO DETECT)
+================================ */
+const BASE_URL =
+  Platform.OS === "web"
+    ? "http://localhost:8000"
+    : "http://10.0.2.2:8000"; // Android Emulator
+
+/* ===============================
+   AXIOS INSTANCE
+================================ */
 const API = axios.create({
-  baseURL: "http://10.0.2.2:8000",
+  baseURL: BASE_URL,
+  timeout: 60000,
 });
 
-/* -------------------------------
-   Questionnaire
--------------------------------- */
-export const predictScore = (answers) => {
-  return API.post("/predict", {
-    features: answers,
-  });
-};
-
-/* -------------------------------
-   Voice Analysis (Gender)
--------------------------------- */
+/* ===============================
+   🎤 VOICE ANALYSIS
+================================ */
 export const analyzeVoice = async (audioUri) => {
   const formData = new FormData();
+  const fileExtension = audioUri.split(".").pop().toLowerCase();
 
   formData.append("file", {
     uri: audioUri,
-    name: "voice.wav",
-    type: "audio/wav",
+    name: `voice.${fileExtension}`,
+    type: `audio/${fileExtension}`,
   });
 
   return API.post("/voice/analyze", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
+  });
+};
+
+/* ===============================
+   🧠 FINAL ANXIETY PREDICTION
+================================ */
+export const finalAnxietyPrediction = (answers, emotion) => {
+  return API.post("/anxiety/final", {
+    answers,
+    emotion,
   });
 };
 
