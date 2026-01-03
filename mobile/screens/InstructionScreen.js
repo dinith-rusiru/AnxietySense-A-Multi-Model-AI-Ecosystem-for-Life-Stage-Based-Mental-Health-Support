@@ -1,6 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function InstructionScreen({ navigation }) {
+export default function InstructionScreen({ navigation, route }) {
+  const emotion = route?.params?.emotion;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Before You Begin</Text>
@@ -14,7 +16,11 @@ export default function InstructionScreen({ navigation }) {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("Questionnaire")}
+        onPress={() =>
+          navigation.navigate("Questionnaire", {
+            emotion, // ✅ PASS IT FORWARD
+          })
+        }
       >
         <Text style={styles.buttonText}>Start Questionnaire</Text>
       </TouchableOpacity>
@@ -53,3 +59,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
