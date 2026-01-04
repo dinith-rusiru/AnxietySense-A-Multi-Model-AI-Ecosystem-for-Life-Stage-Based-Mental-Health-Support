@@ -455,7 +455,7 @@ export default function FaceScreen({ navigation }) {
         {confidence !== null && ` (${confidence}%)`}
       </Text>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.nextButton}
         onPress={() => {
           if (emotion === "--") {
@@ -472,7 +472,20 @@ export default function FaceScreen({ navigation }) {
         }}
       >
         <Text style={styles.nextText}>Continue</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
+
+
+      <TouchableOpacity
+  style={styles.nextButton}
+  onPress={() => {
+    navigation.navigate("Questionnaire", {
+      emotion: emotion, // can be "--" or actual emotion
+    });
+  }}
+>
+  <Text style={styles.nextText}>Continue</Text>
+</TouchableOpacity>
+
     </View>
   );
 }
