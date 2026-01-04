@@ -236,7 +236,7 @@ import {
    EMOTION THEMES
    ======================= */
 const EMOTION_THEMES = {
-  Angry: { primary: "#60a5fa", background: "#eff6ff" },
+  Angry: { primary: "#70b0fdff", background: "#eff6ff" },
   Disgust: { primary: "#2dd4bf", background: "#ecfeff" },
   Fear: { primary: "#c4b5fd", background: "#f5f3ff" },
   Sad: { primary: "#fbbf24", background: "#fffbeb" },
