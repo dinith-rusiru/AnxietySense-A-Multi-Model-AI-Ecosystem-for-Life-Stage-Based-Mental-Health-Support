@@ -3,49 +3,89 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 export default function WelcomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>AnxietySense</Text>
-      <Text style={styles.subtitle}>
-        Understand your anxiety level using AI-powered assessment
-      </Text>
+      
+      {/* ---------- TOP ---------- */}
+      <View style={styles.topSection}>
+        <Text style={styles.title}>AnxietySense</Text>
+        <Text style={styles.tagline}>
+          Emotional Well-Being Support During Pregnancy
+        </Text>
+      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("Voice")}
-      >
-        <Text style={styles.buttonText}>Let’s Go</Text>
-      </TouchableOpacity>
+      {/* ---------- BOTTOM ---------- */}
+      <View style={styles.bottomSection}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("Voice")}
+        >
+          <Text style={styles.buttonText}>Begin Emotional Check-In</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.footerText}>
+          💗 This feature supports emotional awareness during pregnancy and does
+          not replace medical or professional care.
+        </Text>
+      </View>
+
     </View>
   );
 }
 
+/* =======================
+   STYLES
+======================= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F7FF",
+    backgroundColor: "#F4F7FB",
+    padding: 24,
+    justifyContent: "space-between", // top & bottom spacing
+    alignItems: "center", // center everything horizontally
+  },
+
+  /* Top */
+  topSection: {
     alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
+    marginTop: 60,
   },
   title: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#2C3E50",
+    fontSize: 30,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555",
+  tagline: {
+    fontSize: 15,
+    color: "#2563EB",
+    fontWeight: "500",
     textAlign: "center",
-    marginVertical: 20,
+  },
+
+  /* Bottom */
+  bottomSection: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: 40,
   },
   button: {
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#2563EB",
     paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 30,
+    paddingHorizontal: 36,
+    borderRadius: 18,
+    marginBottom: 16,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 18,
+    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "600",
   },
+  footerText: {
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 18,
+    paddingHorizontal: 10,
+  },
 });
+
+
