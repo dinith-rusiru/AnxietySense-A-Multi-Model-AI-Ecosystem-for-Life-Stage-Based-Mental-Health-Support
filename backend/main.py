@@ -36,13 +36,13 @@ class DASSInput(BaseModel):
 
 # -------- Helper --------
 def get_level(score):
-    if score <= 20:
+    if score <= 9:
         return "Normal"
-    elif score <= 40:
+    elif score <= 18:
         return "Mild"
-    elif score <= 60:
+    elif score <= 27:
         return "Moderate"
-    elif score <= 80:
+    elif score <= 36:
         return "Severe"
     else:
         return "Extremely Severe"
