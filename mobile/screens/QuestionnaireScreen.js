@@ -222,7 +222,6 @@
 // });
 
 
-
 import React, { useState } from "react";
 import {
   View,
@@ -234,37 +233,16 @@ import {
 } from "react-native";
 
 /* =======================
-   EMOTION → CALMING THEMES
+   EMOTION THEMES
    ======================= */
 const EMOTION_THEMES = {
-  Angry: {
-    primary: "#60a5fa",
-    background: "#eff6ff",
-  },
-  Disgust: {
-    primary: "#2dd4bf",
-    background: "#ecfeff",
-  },
-  Fear: {
-    primary: "#c4b5fd",
-    background: "#f5f3ff",
-  },
-  Sad: {
-    primary: "#fbbf24",
-    background: "#fffbeb",
-  },
-  Surprise: {
-    primary: "#818cf8",
-    background: "#eef2ff",
-  },
-  Happy: {
-    primary: "#4ade80",
-    background: "#f0fdf4",
-  },
-  Neutral: {
-    primary: "#2563eb",
-    background: "#ffffff",
-  },
+  Angry: { primary: "#60a5fa", background: "#eff6ff" },
+  Disgust: { primary: "#2dd4bf", background: "#ecfeff" },
+  Fear: { primary: "#c4b5fd", background: "#f5f3ff" },
+  Sad: { primary: "#fbbf24", background: "#fffbeb" },
+  Surprise: { primary: "#818cf8", background: "#eef2ff" },
+  Happy: { primary: "#4ade80", background: "#f0fdf4" },
+  Neutral: { primary: "#2563eb", background: "#ffffff" },
 };
 
 /* =======================
@@ -300,7 +278,7 @@ const TOTAL = QUESTIONS.length;
    COMPONENT
    ======================= */
 export default function QuestionnaireScreen({ navigation, route }) {
-  /* 🔥 SAFE EMOTION HANDLING (THIS FIXES YOUR ISSUE) */
+  // ✅ SAFE EMOTION HANDLING
   const rawEmotion = route?.params?.emotion ?? "Neutral";
 
   const emotion =
@@ -360,7 +338,6 @@ export default function QuestionnaireScreen({ navigation, route }) {
           Question {current + 1} / {TOTAL}
         </Text>
 
-        {/* Progress */}
         <View style={styles.progressBar}>
           <View
             style={[
@@ -373,12 +350,10 @@ export default function QuestionnaireScreen({ navigation, route }) {
           />
         </View>
 
-        {/* Question */}
         <Text style={styles.question}>
           {QUESTIONS[current]}
         </Text>
 
-        {/* Options */}
         {[0, 1, 2, 3].map((v) => (
           <TouchableOpacity
             key={v}
@@ -402,7 +377,6 @@ export default function QuestionnaireScreen({ navigation, route }) {
           </TouchableOpacity>
         ))}
 
-        {/* Navigation */}
         <View style={styles.nav}>
           <TouchableOpacity
             disabled={current === 0}
@@ -445,13 +419,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   content: {
     width: "100%",
     maxWidth: 380,
     padding: 20,
   },
-
   title: {
     fontSize: 20,
     fontWeight: "bold",
@@ -459,26 +431,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     color: "#0f172a",
   },
-
   progressBar: {
     height: 6,
     backgroundColor: "#e5e7eb",
     borderRadius: 4,
     marginBottom: 14,
   },
-
   progressFill: {
     height: "100%",
     borderRadius: 4,
   },
-
   question: {
     fontSize: 16,
     lineHeight: 22,
     marginBottom: 24,
     color: "#1e293b",
   },
-
   option: {
     padding: 14,
     borderWidth: 1,
@@ -488,27 +456,22 @@ const styles = StyleSheet.create({
     borderColor: "#cbd5e1",
     backgroundColor: "#ffffff",
   },
-
   optionText: {
     fontSize: 16,
     color: "#0f172a",
   },
-
   nav: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
   },
-
   navBtn: {
     padding: 14,
   },
-
   submitBtn: {
     padding: 14,
     borderRadius: 12,
   },
-
   disabled: {
     opacity: 0.4,
   },
