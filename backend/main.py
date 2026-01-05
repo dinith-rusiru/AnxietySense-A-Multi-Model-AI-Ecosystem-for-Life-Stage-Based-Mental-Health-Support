@@ -128,11 +128,26 @@ def get_level(score):
         return "Extremely Severe"
 
 # -------- API Route --------
+# @app.post("/predict")
+# def predict(data: DASSInput):
+#     values = np.array([list(data.dict().values())])
+#     prediction = model.predict(values)[0]
+#     level = get_level(prediction)
+
+#     return {
+#         "Total_Final_Score": int(prediction),
+#         "Total_Level": level
+#     }
+
 @app.post("/predict")
 def predict(data: DASSInput):
+    print("📥 DASS21 data received:", data.dict())
+
     values = np.array([list(data.dict().values())])
     prediction = model.predict(values)[0]
     level = get_level(prediction)
+
+    print("📊 Score:", prediction, "Level:", level)
 
     return {
         "Total_Final_Score": int(prediction),
