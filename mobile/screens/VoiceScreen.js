@@ -28,6 +28,7 @@ export default function VoiceScreen({ navigation }) {
   const [recording, setRecording] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   /* ======================
      START RECORDING
@@ -54,6 +55,7 @@ export default function VoiceScreen({ navigation }) {
       console.log("🎙️ [Voice] Recording started");
       setRecording(recording);
       setResult(null);
+      setErrorMessage(null);
     } catch (err) {
       console.error("❌ [Voice] Start recording failed:", err);
       Alert.alert("Error", "Could not start recording.");
@@ -69,6 +71,7 @@ export default function VoiceScreen({ navigation }) {
     try {
       console.log("⏹️ [Voice] Stopping recording...");
       setLoading(true);
+      setErrorMessage(null);
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
@@ -78,7 +81,7 @@ export default function VoiceScreen({ navigation }) {
       await uploadAudio(uri);
     } catch (err) {
       console.error("❌ [Voice] Stop error:", err);
-      Alert.alert("Error", "Failed to analyze voice.");
+      setErrorMessage("Failed to analyze voice. Please try again.");
       setLoading(false);
     }
   };
@@ -112,13 +115,12 @@ export default function VoiceScreen({ navigation }) {
       console.log("✅ [Voice] Analysis result:", response.data);
 
       /* ======================
-         🔴 ERROR POPUP (FIXED)
+         🔴 HANDLE ERRORS (DISPLAY IN UI)
       ====================== */
-      if (!response.data.success) {
-        Alert.alert(
-          "Voice Analysis",
-          response.data.error || "Voice could not be analyzed. Please try again."
-        );
+      if (response.data.success === false) {
+        const errorMsg = response.data.error ||
+          "Your voice was too low or unclear. Please try again.";
+        setErrorMessage(errorMsg);
         setResult(null);
         return;
       }
@@ -127,12 +129,23 @@ export default function VoiceScreen({ navigation }) {
          ✅ SUCCESS
       ====================== */
       setResult(response.data);
+      setErrorMessage(null);
+
     } catch (err) {
       console.error("❌ [Voice] Upload/analysis failed:", err);
-      Alert.alert("Analysis Failed", "Could not analyze voice.");
+      setErrorMessage("Could not analyze voice. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  /* ======================
+     TRY AGAIN BUTTON
+  ====================== */
+  const handleTryAgain = () => {
+    setErrorMessage(null);
+    setResult(null);
+    setRecording(null);
   };
 
   return (
@@ -164,7 +177,21 @@ export default function VoiceScreen({ navigation }) {
         <Text style={styles.btnText}>Continue without Voice Analysis</Text>
       </TouchableOpacity>
 
-      {!result && !loading && (
+      {/* ======================
+          ERROR MESSAGE DISPLAY
+      ====================== */}
+      {errorMessage && (
+        <View style={styles.errorCard}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Voice Analysis Failed</Text>
+          <Text style={styles.errorMessage}>{errorMessage}</Text>
+          <TouchableOpacity style={styles.tryAgainBtn} onPress={handleTryAgain}>
+            <Text style={styles.btnText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!result && !loading && !errorMessage && (
         <>
           {!recording ? (
             <TouchableOpacity style={styles.recordBtn} onPress={startRecording}>
@@ -182,7 +209,7 @@ export default function VoiceScreen({ navigation }) {
         <Text style={styles.loadingText}>🔄 Analyzing your voice...</Text>
       )}
 
-      {result && !loading && (
+      {result && !loading && !errorMessage && (
         <View style={styles.resultCard}>
           <Text style={styles.resultTitle}>Analysis Result</Text>
 
@@ -213,7 +240,7 @@ export default function VoiceScreen({ navigation }) {
 }
 
 /* ======================
-   STYLES (UNCHANGED)
+   STYLES
 ====================== */
 const styles = StyleSheet.create({
   container: {
@@ -268,6 +295,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 14,
   },
+  tryAgainBtn: {
+    backgroundColor: "#e339e9f6",
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 12,
+  },
   btnText: {
     color: "#FFFFFF",
     textAlign: "center",
@@ -278,6 +311,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     color: "#374151",
+  },
+  errorCard: {
+    marginTop: 20,
+    padding: 20,
+    backgroundColor: "#FEF2F2",
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#DC2626",
+    alignItems: "center",
+  },
+  errorIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#DC2626",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: "#991B1B",
+    textAlign: "center",
+    lineHeight: 20,
   },
   resultCard: {
     marginTop: 20,
