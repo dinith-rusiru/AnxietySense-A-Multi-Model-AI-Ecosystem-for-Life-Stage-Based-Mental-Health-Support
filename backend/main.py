@@ -7,7 +7,6 @@ import pandas as pd
 import os
 import uuid
 import tensorflow as tf
-from pydub import AudioSegment
 
 from voice_api.utils.feature_extractor import (
     extract_gender_features,
@@ -19,7 +18,6 @@ BASE_DIR = os.path.dirname(__file__)
 TEMP_DIR = os.path.join(BASE_DIR, "temp_audio")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-# Models
 SVM_MODEL_PATH = os.path.join(BASE_DIR, "model", "svm_total_score_model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "model", "scaler.pkl")
 
@@ -27,7 +25,9 @@ GENDER_MODEL_PATH = os.path.join(BASE_DIR, "voice_api", "model", "gender_svm_mod
 GENDER_SCALER_PATH = os.path.join(BASE_DIR, "voice_api", "model", "gender_scaler.pkl")
 
 EMOTION_MODEL_PATH = os.path.join(BASE_DIR, "voice_api", "model", "emotion_model.keras")
-EMOTION_ENCODER_PATH = os.path.join(BASE_DIR, "voice_api", "model", "emotion_label_encoder.pkl")
+EMOTION_ENCODER_PATH = os.path.join(
+    BASE_DIR, "voice_api", "model", "emotion_label_encoder.pkl"
+)
 
 # ---------------- LOAD MODELS ----------------
 svm_model = joblib.load(SVM_MODEL_PATH)
@@ -81,13 +81,34 @@ async def analyze_voice(file: UploadFile = File(...)):
         with open(path, "wb") as f:
             f.write(await file.read())
 
+        print("🎤 Voice file saved:", path)
+
+        # -------- Gender --------
         gender_features = extract_gender_features(path)
         if gender_features is None:
-            return {"success": False, "error": "No clear voice detected"}
+            print("⚠️ No clear voice detected")
+            return {
+                "success": False,
+                "error": "Voice is too low or unclear. Please try again."
+            }
 
-        gender_scaled = gender_scaler.transform(gender_features.reshape(1, -1))
-        gender = "female" if gender_model.predict(gender_scaled)[0] == 1 else "male"
+        gender_scaled = gender_scaler.transform(
+            gender_features.reshape(1, -1)
+        )
+        gender_pred = gender_model.predict(gender_scaled)[0]
+        gender = "female" if gender_pred == 1 else "male"
 
+        print("🔍 Predicted gender:", gender)
+
+        # 🚫 BLOCK MALE VOICES
+        if gender == "male":
+            print("🚫 Male voice detected — blocked")
+            return {
+                "success": False,
+                "error": "This feature is designed only for pregnant women. Please try again."
+            }
+
+        # -------- Emotion --------
         emotion_features = extract_emotion_features(path)
         if emotion_features is None:
             emotion = "neutral"
@@ -102,6 +123,8 @@ async def analyze_voice(file: UploadFile = File(...)):
             if confidence < 0.5:
                 emotion = "neutral"
 
+        print("😊 Detected emotion:", emotion, "confidence:", confidence)
+
         return {
             "success": True,
             "gender": gender,
@@ -110,12 +133,17 @@ async def analyze_voice(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        print("❌ Voice analysis error:", e)
+        return {
+            "success": False,
+            "error": "Voice analysis failed. Please try again."
+        }
 
 # ---------------- QUESTIONNAIRE ----------------
 class QuestionnaireInput(BaseModel):
     answers: dict
     emotion: str
+
 
 @app.post("/anxiety/final")
 def final_anxiety(data: QuestionnaireInput):
@@ -133,6 +161,7 @@ def final_anxiety(data: QuestionnaireInput):
         "final_score": round(final_score, 2),
         "anxiety_level": anxiety_level(final_score),
     }
+
 
 @app.get("/")
 def root():

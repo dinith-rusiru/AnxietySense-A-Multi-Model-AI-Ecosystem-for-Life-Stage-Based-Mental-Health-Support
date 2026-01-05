@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   back: {
-    color: "#2563EB",
+    color: "#e339e9f6",
     fontSize: 15,
     fontWeight: "500",
   },
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: "100%",
-    backgroundColor: "#60A5FA",
+    backgroundColor: "#e7a8e9f6",
   },
 
   /* Card */
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
 
   selected: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#e339e9f6",
   },
 
   optionText: {
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   /* Submit */
   submit: {
     marginTop: 28,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#24b443de",
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: "center",

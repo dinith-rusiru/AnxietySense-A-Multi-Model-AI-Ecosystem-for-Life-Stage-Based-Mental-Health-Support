@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontSize: 15,
-    color: "#2563EB",
+    color: "#e339e9f6",
     fontWeight: "500",
     textAlign: "center",
   },
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   button: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#e339e9f6",
     paddingVertical: 14,
     paddingHorizontal: 36,
     borderRadius: 18,

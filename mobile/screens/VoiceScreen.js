@@ -110,6 +110,22 @@ export default function VoiceScreen({ navigation }) {
       );
 
       console.log("✅ [Voice] Analysis result:", response.data);
+
+      /* ======================
+         🔴 ERROR POPUP (FIXED)
+      ====================== */
+      if (!response.data.success) {
+        Alert.alert(
+          "Voice Analysis",
+          response.data.error || "Voice could not be analyzed. Please try again."
+        );
+        setResult(null);
+        return;
+      }
+
+      /* ======================
+         ✅ SUCCESS
+      ====================== */
       setResult(response.data);
     } catch (err) {
       console.error("❌ [Voice] Upload/analysis failed:", err);
@@ -121,7 +137,6 @@ export default function VoiceScreen({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Back */}
       <TouchableOpacity
         style={styles.backBtn}
         onPress={() => navigation.navigate("Welcome")}
@@ -140,7 +155,6 @@ export default function VoiceScreen({ navigation }) {
         ))}
       </View>
 
-      {/* Skip Voice */}
       <TouchableOpacity
         style={styles.skipBtn}
         onPress={() =>
@@ -150,7 +164,6 @@ export default function VoiceScreen({ navigation }) {
         <Text style={styles.btnText}>Continue without Voice Analysis</Text>
       </TouchableOpacity>
 
-      {/* Controls */}
       {!result && !loading && (
         <>
           {!recording ? (
@@ -166,12 +179,9 @@ export default function VoiceScreen({ navigation }) {
       )}
 
       {loading && (
-        <Text style={styles.loadingText}>
-          🔄 Analyzing your voice...
-        </Text>
+        <Text style={styles.loadingText}>🔄 Analyzing your voice...</Text>
       )}
 
-      {/* RESULT CARD */}
       {result && !loading && (
         <View style={styles.resultCard}>
           <Text style={styles.resultTitle}>Analysis Result</Text>
@@ -203,7 +213,7 @@ export default function VoiceScreen({ navigation }) {
 }
 
 /* ======================
-   STYLES
+   STYLES (UNCHANGED)
 ====================== */
 const styles = StyleSheet.create({
   container: {
@@ -211,13 +221,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: "#F5F7FB",
   },
-  backBtn: {
-    marginBottom: 10,
-  },
-  backText: {
-    color: "#2563EB",
-    fontSize: 15,
-  },
+  backBtn: { marginBottom: 10 },
+  backText: { color: "#e339e9f6", fontSize: 15 },
   title: {
     fontSize: 24,
     fontWeight: "600",
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   recordBtn: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#24b443de",
     padding: 14,
     borderRadius: 12,
   },
