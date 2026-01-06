@@ -18,13 +18,6 @@ export default function IntroScreen({ navigation }) {
         This is not a medical diagnosis.
       </Text>
 
-      {/* <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("Questionnaire")}
-      > 
-        <Text style={styles.buttonText}>Start Assessment</Text>
-      </TouchableOpacity> */}
-
       <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate("Face")}
