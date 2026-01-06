@@ -235,5 +235,5 @@ npx expo build
 ## 📄 License
 
 This project is developed as part of a **Final Year Research Project at SLIIT**.  
-All rights reserved © 2024–2025 **AnxietySense Research Team**.
+All rights reserved © 2025–2026 **AnxietySense Research Team**.
 
