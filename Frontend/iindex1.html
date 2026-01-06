@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood-Based Music Recommender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #0f0f23;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #b8b8d1;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-zone {
+            border: 3px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 15px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .upload-zone:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.active {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #b8b8d1;
+            font-size: 1.1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .preview-container {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .settings-group {
+            margin-bottom: 25px;
+        }
+
+        .settings-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #b8b8d1;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .settings-group input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .settings-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .loader {
+            width: 80px;
+            height: 80px;
+            border: 6px solid rgba(255, 255, 255, 0.1);
+            border-top: 6px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.3rem;
+            color: #b8b8d1;
+        }
+
+        .results-container {
+            margin-top: 40px;
+        }
+
+        .mood-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mood-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .mood-emoji {
+            font-size: 7rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .mood-name {
+            font-size: 3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mood-confidence {
+            font-size: 1.4rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .emotions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .emotion-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .emotion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .emotion-name {
+            font-weight: 600;
+            color: #b8b8d1;
+        }
+
+        .emotion-value {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .emotion-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .emotion-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        .songs-header {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .year-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 20px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .songs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .song-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .song-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .song-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .song-artist {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .song-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #b8b8d1;
+        }
+
+        .no-songs {
+            text-align: center;
+            padding: 60px;
+            color: #b8b8d1;
+            font-size: 1.2rem;
+        }
+
+        .error-msg {
+            background: rgba(220, 38, 38, 0.2);
+            border: 1px solid rgba(220, 38, 38, 0.5);
+            color: #fca5a5;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .mood-emoji {
+                font-size: 5rem;
+            }
+
+            .mood-name {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎵 MoodTune</h1>
+            <p>Discover your mood and get personalized music recommendations</p>
+        </div>
+
+        <div class="main-grid">
+            <div class="card">
+                <div class="card-title">📸 Upload Your Photo</div>
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">Click or drag your image here</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <div class="preview-container hidden" id="previewContainer">
+                    <img id="previewImg" class="preview-img">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚙️ Settings</div>
+                <div class="settings-group">
+                    <label>Your Age</label>
+                    <input type="number" id="ageInput" value="25" min="10" max="100">
+                </div>
+                <div class="settings-group">
+                    <label>Current Year</label>
+                    <input type="number" id="yearInput" value="2025" min="1950" max="2030">
+                </div>
+                <div class="settings-group">
+                    <label>Number of Songs</label>
+                    <input type="number" id="limitInput" value="10" min="1" max="50">
+                </div>
+                <button class="analyze-btn" id="analyzeBtn" disabled>
+                    🎯 Analyze Mood & Get Music
+                </button>
+            </div>
+        </div>
+
+        <div id="errorMsg" class="error-msg hidden"></div>
+
+        <div class="results-container hidden" id="resultsContainer">
+            <div class="mood-card">
+                <div class="mood-emoji" id="moodEmoji"></div>
+                <div class="mood-name" id="moodName"></div>
+                <div class="mood-confidence" id="moodConfidence"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📊 All Emotion Scores</div>
+                <div class="emotions-grid" id="emotionsGrid"></div>
+            </div>
+
+            <div class="card">
+                <div class="songs-header">🎶 Your Personalized Playlist</div>
+                <div style="text-align: center;">
+                    <span class="year-badge" id="yearRange"></span>
+                </div>
+                <div class="songs-grid" id="songsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text">Analyzing your mood...</div>
+    </div>
+
+    <script>
+        var API_URL = 'http://localhost:5000';
+        var selectedFile = null;
+
+        var moodEmojis = {
+            'angry': '😠',
+            'disgust': '🤢',
+            'fear': '😨',
+            'happy': '😊',
+            'neutral': '😐',
+            'sad': '😢',
+            'surprise': '😮'
+        };
+
+        var uploadZone = document.getElementById('uploadZone');
+        var fileInput = document.getElementById('fileInput');
+        var previewContainer = document.getElementById('previewContainer');
+        var previewImg = document.getElementById('previewImg');
+        var analyzeBtn = document.getElementById('analyzeBtn');
+        var loadingOverlay = document.getElementById('loadingOverlay');
+        var errorMsg = document.getElementById('errorMsg');
+        var resultsContainer = document.getElementById('resultsContainer');
+        var ageInput = document.getElementById('ageInput');
+        var yearInput = document.getElementById('yearInput');
+        var limitInput = document.getElementById('limitInput');
+
+        uploadZone.onclick = function() {
+            fileInput.click();
+        };
+
+        fileInput.onchange = function(e) {
+            if (this.files && this.files[0]) {
+                handleFile(this.files[0]);
+            }
+        };
+
+        uploadZone.ondragover = function(e) {
+            e.preventDefault();
+            uploadZone.classList.add('active');
+        };
+
+        uploadZone.ondragleave = function() {
+            uploadZone.classList.remove('active');
+        };
+
+        uploadZone.ondrop = function(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('active');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        };
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select a valid image file');
+                return;
+            }
+
+            selectedFile = file;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        analyzeBtn.onclick = function() {
+            if (!selectedFile) return;
+            analyzeMood();
+        };
+
+        function analyzeMood() {
+            hideError();
+            resultsContainer.classList.add('hidden');
+            loadingOverlay.classList.remove('hidden');
+
+            var formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('age', ageInput.value);
+            formData.append('current_year', yearInput.value);
+            formData.append('limit', limitInput.value);
+
+            fetch(API_URL + '/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { ok: response.ok, data: data };
+                });
+            })
+            .then(function(result) {
+                if (!result.ok) {
+                    throw new Error(result.data.error || 'Prediction failed');
+                }
+                displayResults(result.data);
+            })
+            .catch(function(err) {
+                showError(err.message);
+            })
+            .finally(function() {
+                loadingOverlay.classList.add('hidden');
+            });
+        }
+
+        function displayResults(data) {
+            document.getElementById('moodEmoji').textContent = moodEmojis[data.mood] || '😊';
+            document.getElementById('moodName').textContent = data.mood;
+            document.getElementById('moodConfidence').textContent = data.confidence + '% Confidence';
+            document.getElementById('yearRange').textContent = 
+                '📅 ' + data.teenage_year_range.start + ' - ' + data.teenage_year_range.end;
+
+            displayEmotions(data.all_emotions);
+            displaySongs(data.recommended_songs);
+
+            resultsContainer.classList.remove('hidden');
+            setTimeout(function() {
+                resultsContainer.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+
+        function displayEmotions(emotions) {
+            var container = document.getElementById('emotionsGrid');
+            container.innerHTML = '';
+
+            var sorted = Object.keys(emotions).map(function(key) {
+                return [key, emotions[key]];
+            }).sort(function(a, b) {
+                return b[1] - a[1];
+            });
+
+            sorted.forEach(function(item) {
+                var emotion = item[0];
+                var value = item[1];
+                
+                var div = document.createElement('div');
+                div.className = 'emotion-item';
+                div.innerHTML = 
+                    '<div class="emotion-header">' +
+                        '<span class="emotion-name">' + (moodEmojis[emotion] || '😊') + ' ' + emotion + '</span>' +
+                        '<span class="emotion-value">' + value.toFixed(1) + '%</span>' +
+                    '</div>' +
+                    '<div class="emotion-bar">' +
+                        '<div class="emotion-bar-fill" style="width: ' + value + '%"></div>' +
+                    '</div>';
+                container.appendChild(div);
+            });
+        }
+
+        function displaySongs(songs) {
+            var container = document.getElementById('songsGrid');
+            container.innerHTML = '';
+
+            if (!songs || songs.length === 0) {
+                container.innerHTML = '<div class="no-songs">No songs found for your mood and era 🎵</div>';
+                return;
+            }
+
+            songs.forEach(function(song) {
+                var div = document.createElement('div');
+                div.className = 'song-card';
+                div.innerHTML = 
+                    '<div class="song-name">' + (song.name || 'Unknown') + '</div>' +
+                    '<div class="song-artist">🎤 ' + (song.artist || 'Unknown Artist') + '</div>' +
+                    '<div class="song-meta">' +
+                        '<span>📅 ' + (song.year || 'N/A') + '</span>' +
+                        '<span>😊 ' + (song.mood || 'N/A') + '</span>' +
+                    '</div>';
+                container.appendChild(div);
+            });
+        }
+
+        function showError(message) {
+            errorMsg.textContent = '⚠️ ' + message;
+            errorMsg.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMsg.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
