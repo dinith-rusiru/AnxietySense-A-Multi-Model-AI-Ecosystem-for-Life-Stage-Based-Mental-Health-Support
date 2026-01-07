@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mood-Based Music Recommender</title>
+    <title>Emotion Recognition & Music Recommendation</title>
     <style>
         * {
             margin: 0;
@@ -12,202 +12,378 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
-            background: #0f0f23;
-            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-        }
-
-        .gradient-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460, #533483);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-            z-index: -1;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .header h1 {
-            font-size: 3.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 15px;
-            font-weight: 800;
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            color: #b8b8d1;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            background: white;
             border-radius: 20px;
-            padding: 35px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+            padding: 40px;
         }
 
-        .card-title {
-            font-size: 1.5rem;
-            margin-bottom: 25px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .upload-zone {
-            border: 3px dashed rgba(102, 126, 234, 0.5);
-            border-radius: 15px;
-            padding: 50px 30px;
+        h1 {
             text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .age-input-section {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+        }
+
+        .age-input-section label {
+            font-size: 1.1em;
+            color: #333;
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        .age-input-section input {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .age-input-section small {
+            display: block;
+            margin-top: 8px;
+            color: #666;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.3s ease;
+            background: #f8f9ff;
         }
 
-        .upload-zone:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .upload-zone.active {
+        .upload-area:hover {
             border-color: #764ba2;
-            background: rgba(118, 75, 162, 0.1);
+            background: #f0f1ff;
+            transform: scale(1.02);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8e9ff;
         }
 
         .upload-icon {
-            font-size: 3.5rem;
+            font-size: 60px;
+            color: #667eea;
             margin-bottom: 15px;
         }
 
         .upload-text {
-            color: #b8b8d1;
-            font-size: 1.1rem;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .preview-container {
-            margin-top: 25px;
+            color: #666;
+            font-size: 1.1em;
             text-align: center;
         }
 
-        .preview-img {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        #fileInput {
+            display: none;
         }
 
-        .settings-group {
-            margin-bottom: 25px;
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        .settings-group label {
-            display: block;
-            margin-bottom: 10px;
-            color: #b8b8d1;
-            font-size: 0.95rem;
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
             font-weight: 600;
         }
 
-        .settings-group input {
-            width: 100%;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: #fff;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        .settings-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .analyze-btn {
-            width: 100%;
-            padding: 18px;
+        .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 1.2rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 20px;
+            color: white;
         }
 
-        .analyze-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .analyze-btn:disabled {
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-webcam {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-webcam:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none !important;
         }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .preview-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #videoElement {
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            z-index: 1000;
+            max-width: 500px;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .loader {
-            width: 80px;
-            height: 80px;
-            border: 6px solid rgba(255, 255, 255, 0.1);
-            border-top: 6px solid #667eea;
+        .canvas-hidden {
+            display: none;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .main-result {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .emotion-label {
+            font-size: 3em;
+            font-weight: bold;
+            text-transform: capitalize;
+            margin-bottom: 10px;
+        }
+
+        .confidence-label {
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+
+        .all-results {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .emotion-bar {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .emotion-bar:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .emotion-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .emotion-name {
+            text-transform: capitalize;
+        }
+
+        .emotion-percentage {
+            color: #667eea;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .songs-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .songs-section h3 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .songs-subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .songs-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .song-card {
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .song-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .song-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #f5576c;
+        }
+
+        .song-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+            color: #777;
+            margin-top: 10px;
+        }
+
+        .song-year {
+            background: #f8f9ff;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .song-mood {
+            background: #fff0f5;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            color: #f5576c;
+            text-transform: capitalize;
+        }
+
+        .no-songs {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
@@ -215,469 +391,360 @@
             100% { transform: rotate(360deg); }
         }
 
-        .loading-text {
-            margin-top: 20px;
-            font-size: 1.3rem;
-            color: #b8b8d1;
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
         }
 
-        .results-container {
-            margin-top: 40px;
+        .error-message.active {
+            display: block;
         }
 
-        .mood-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 50px;
-            text-align: center;
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .mood-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 3s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-        }
-
-        .mood-emoji {
-            font-size: 7rem;
-            margin-bottom: 20px;
-            display: inline-block;
-            animation: float 3s ease-in-out infinite;
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-        }
-
-        .mood-name {
-            font-size: 3rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .mood-confidence {
-            font-size: 1.4rem;
-            opacity: 0.9;
-            position: relative;
-            z-index: 1;
-        }
-
-        .emotions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 40px;
-        }
-
-        .emotion-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .emotion-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .emotion-name {
-            font-weight: 600;
-            color: #b8b8d1;
-        }
-
-        .emotion-value {
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .emotion-bar {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .emotion-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 10px;
-            transition: width 1s ease;
-        }
-
-        .songs-header {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #fff;
-        }
-
-        .year-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            background: rgba(102, 126, 234, 0.2);
-            border-radius: 20px;
-            color: #667eea;
-            font-weight: 600;
-            margin-bottom: 30px;
-        }
-
-        .songs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .song-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .song-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        }
-
-        .song-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-
-        .song-artist {
-            color: #667eea;
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-        }
-
-        .song-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 0.9rem;
-            color: #b8b8d1;
-        }
-
-        .no-songs {
-            text-align: center;
-            padding: 60px;
-            color: #b8b8d1;
-            font-size: 1.2rem;
-        }
-
-        .error-msg {
-            background: rgba(220, 38, 38, 0.2);
-            border: 1px solid rgba(220, 38, 38, 0.5);
-            color: #fca5a5;
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        @media (max-width: 968px) {
-            .main-grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
             }
 
-            .header h1 {
-                font-size: 2.5rem;
+            h1 {
+                font-size: 2em;
             }
 
-            .mood-emoji {
-                font-size: 5rem;
+            .emotion-label {
+                font-size: 2em;
             }
 
-            .mood-name {
-                font-size: 2rem;
+            .song-details {
+                flex-direction: column;
+                gap: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="gradient-bg"></div>
-
     <div class="container">
-        <div class="header">
-            <h1>🎵 MoodTune</h1>
-            <p>Discover your mood and get personalized music recommendations</p>
+        <h1>🎭 Emotion Recognition & Music</h1>
+        <p class="subtitle">Detect your emotion and get personalized song recommendations</p>
+
+        <div class="age-input-section">
+            <label for="ageInput">Your Age:</label>
+            <input type="number" id="ageInput" min="1" max="120" placeholder="25">
+            <small>We'll recommend songs from your teenage years based on your age</small>
         </div>
 
-        <div class="main-grid">
-            <div class="card">
-                <div class="card-title">📸 Upload Your Photo</div>
-                <div class="upload-zone" id="uploadZone">
-                    <div class="upload-icon">🖼️</div>
-                    <div class="upload-text">Click or drag your image here</div>
-                </div>
-                <input type="file" id="fileInput" class="file-input" accept="image/*">
-                <div class="preview-container hidden" id="previewContainer">
-                    <img id="previewImg" class="preview-img">
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">
+                    Click to upload or drag and drop<br>
+                    <small>Supported: JPG, PNG, GIF</small>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-title">⚙️ Settings</div>
-                <div class="settings-group">
-                    <label>Your Age</label>
-                    <input type="number" id="ageInput" value="25" min="10" max="100">
-                </div>
-                <div class="settings-group">
-                    <label>Current Year</label>
-                    <input type="number" id="yearInput" value="2025" min="1950" max="2030">
-                </div>
-                <div class="settings-group">
-                    <label>Number of Songs</label>
-                    <input type="number" id="limitInput" value="10" min="1" max="50">
-                </div>
-                <button class="analyze-btn" id="analyzeBtn" disabled>
-                    🎯 Analyze Mood & Get Music
-                </button>
+            <input type="file" id="fileInput" accept="image/*">
+            
+            <div class="button-group">
+                <button class="btn-webcam" id="webcamBtn">Use Webcam</button>
+                <button class="btn-primary" id="analyzeBtn" disabled>Analyze Emotion</button>
+                <button class="btn-secondary" id="resetBtn">Reset</button>
             </div>
         </div>
 
-        <div id="errorMsg" class="error-msg hidden"></div>
+        <div class="preview-section" id="previewSection">
+            <img id="imagePreview" alt="Preview">
+            <video id="videoElement" autoplay style="display: none;"></video>
+            <canvas id="canvas" class="canvas-hidden"></canvas>
+        </div>
 
-        <div class="results-container hidden" id="resultsContainer">
-            <div class="mood-card">
-                <div class="mood-emoji" id="moodEmoji"></div>
-                <div class="mood-name" id="moodName"></div>
-                <div class="mood-confidence" id="moodConfidence"></div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing emotion and finding perfect songs...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="main-result">
+                <div class="emotion-label" id="mainEmotion">Happy</div>
+                <div class="confidence-label">Confidence: <span id="mainConfidence">95%</span></div>
             </div>
 
-            <div class="card">
-                <div class="card-title">📊 All Emotion Scores</div>
-                <div class="emotions-grid" id="emotionsGrid"></div>
-            </div>
+            <h3 style="margin-bottom: 15px; color: #333;">All Emotions:</h3>
+            <div class="all-results" id="allResults"></div>
 
-            <div class="card">
-                <div class="songs-header">🎶 Your Personalized Playlist</div>
-                <div style="text-align: center;">
-                    <span class="year-badge" id="yearRange"></span>
-                </div>
-                <div class="songs-grid" id="songsGrid"></div>
+            <div class="songs-section" id="songsSection" style="display: none;">
+                <h3>🎵 Your Personalized Playlist</h3>
+                <p class="songs-subtitle" id="songsSubtitle"></p>
+                <div class="songs-list" id="songsList"></div>
             </div>
         </div>
-    </div>
-
-    <div class="loading-overlay hidden" id="loadingOverlay">
-        <div class="loader"></div>
-        <div class="loading-text">Analyzing your mood...</div>
     </div>
 
     <script>
-        var API_URL = 'http://localhost:5000';
-        var selectedFile = null;
+        const API_URL = 'http://localhost:5000/api/predict';
+        
+        let currentImage = null;
+        let webcamStream = null;
+        let usingWebcam = false;
 
-        var moodEmojis = {
-            'angry': '😠',
-            'disgust': '🤢',
-            'fear': '😨',
-            'happy': '😊',
-            'neutral': '😐',
-            'sad': '😢',
-            'surprise': '😮'
-        };
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const videoElement = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvas');
+        const previewSection = document.getElementById('previewSection');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const webcamBtn = document.getElementById('webcamBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const ageInput = document.getElementById('ageInput');
 
-        var uploadZone = document.getElementById('uploadZone');
-        var fileInput = document.getElementById('fileInput');
-        var previewContainer = document.getElementById('previewContainer');
-        var previewImg = document.getElementById('previewImg');
-        var analyzeBtn = document.getElementById('analyzeBtn');
-        var loadingOverlay = document.getElementById('loadingOverlay');
-        var errorMsg = document.getElementById('errorMsg');
-        var resultsContainer = document.getElementById('resultsContainer');
-        var ageInput = document.getElementById('ageInput');
-        var yearInput = document.getElementById('yearInput');
-        var limitInput = document.getElementById('limitInput');
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
 
-        uploadZone.onclick = function() {
-            fileInput.click();
-        };
-
-        fileInput.onchange = function(e) {
-            if (this.files && this.files[0]) {
-                handleFile(this.files[0]);
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
             }
-        };
+        });
 
-        uploadZone.ondragover = function(e) {
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadZone.classList.add('active');
-        };
+            uploadArea.classList.add('dragover');
+        });
 
-        uploadZone.ondragleave = function() {
-            uploadZone.classList.remove('active');
-        };
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
 
-        uploadZone.ondrop = function(e) {
+        uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadZone.classList.remove('active');
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleFile(e.dataTransfer.files[0]);
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
             }
-        };
+        });
 
         function handleFile(file) {
-            if (!file.type.startsWith('image/')) {
-                showError('Please select a valid image file');
-                return;
-            }
-
-            selectedFile = file;
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                previewContainer.classList.remove('hidden');
+            stopWebcam();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImage = e.target.result;
+                imagePreview.src = currentImage;
+                imagePreview.style.display = 'block';
+                videoElement.style.display = 'none';
+                previewSection.classList.add('active');
                 analyzeBtn.disabled = false;
+                resultsSection.classList.remove('active');
+                usingWebcam = false;
             };
             reader.readAsDataURL(file);
         }
 
-        analyzeBtn.onclick = function() {
-            if (!selectedFile) return;
-            analyzeMood();
-        };
-
-        function analyzeMood() {
-            hideError();
-            resultsContainer.classList.add('hidden');
-            loadingOverlay.classList.remove('hidden');
-
-            var formData = new FormData();
-            formData.append('image', selectedFile);
-            formData.append('age', ageInput.value);
-            formData.append('current_year', yearInput.value);
-            formData.append('limit', limitInput.value);
-
-            fetch(API_URL + '/predict', {
-                method: 'POST',
-                body: formData
-            })
-            .then(function(response) {
-                return response.json().then(function(data) {
-                    return { ok: response.ok, data: data };
-                });
-            })
-            .then(function(result) {
-                if (!result.ok) {
-                    throw new Error(result.data.error || 'Prediction failed');
+        // Webcam functionality
+        webcamBtn.addEventListener('click', async () => {
+            if (usingWebcam) {
+                stopWebcam();
+            } else {
+                try {
+                    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoElement.srcObject = webcamStream;
+                    videoElement.style.display = 'block';
+                    imagePreview.style.display = 'none';
+                    previewSection.classList.add('active');
+                    analyzeBtn.disabled = false;
+                    webcamBtn.textContent = 'Stop Webcam';
+                    usingWebcam = true;
+                    resultsSection.classList.remove('active');
+                } catch (err) {
+                    showError('Could not access webcam: ' + err.message);
                 }
-                displayResults(result.data);
-            })
-            .catch(function(err) {
-                showError(err.message);
-            })
-            .finally(function() {
-                loadingOverlay.classList.add('hidden');
-            });
+            }
+        });
+
+        function stopWebcam() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+                videoElement.style.display = 'none';
+                webcamBtn.textContent = 'Use Webcam';
+                usingWebcam = false;
+            }
         }
 
-        function displayResults(data) {
-            document.getElementById('moodEmoji').textContent = moodEmojis[data.mood] || '😊';
-            document.getElementById('moodName').textContent = data.mood;
-            document.getElementById('moodConfidence').textContent = data.confidence + '% Confidence';
-            document.getElementById('yearRange').textContent = 
-                '📅 ' + data.teenage_year_range.start + ' - ' + data.teenage_year_range.end;
-
-            displayEmotions(data.all_emotions);
-            displaySongs(data.recommended_songs);
-
-            resultsContainer.classList.remove('hidden');
-            setTimeout(function() {
-                resultsContainer.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+        function captureFromWebcam() {
+            const context = canvas.getContext('2d');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0);
+            return canvas.toDataURL('image/jpeg');
         }
 
-        function displayEmotions(emotions) {
-            var container = document.getElementById('emotionsGrid');
-            container.innerHTML = '';
+        // Analyze button
+        analyzeBtn.addEventListener('click', async () => {
+            let imageData;
+            
+            if (usingWebcam) {
+                imageData = captureFromWebcam();
+            } else {
+                imageData = currentImage;
+            }
 
-            var sorted = Object.keys(emotions).map(function(key) {
-                return [key, emotions[key]];
-            }).sort(function(a, b) {
-                return b[1] - a[1];
-            });
-
-            sorted.forEach(function(item) {
-                var emotion = item[0];
-                var value = item[1];
-                
-                var div = document.createElement('div');
-                div.className = 'emotion-item';
-                div.innerHTML = 
-                    '<div class="emotion-header">' +
-                        '<span class="emotion-name">' + (moodEmojis[emotion] || '😊') + ' ' + emotion + '</span>' +
-                        '<span class="emotion-value">' + value.toFixed(1) + '%</span>' +
-                    '</div>' +
-                    '<div class="emotion-bar">' +
-                        '<div class="emotion-bar-fill" style="width: ' + value + '%"></div>' +
-                    '</div>';
-                container.appendChild(div);
-            });
-        }
-
-        function displaySongs(songs) {
-            var container = document.getElementById('songsGrid');
-            container.innerHTML = '';
-
-            if (!songs || songs.length === 0) {
-                container.innerHTML = '<div class="no-songs">No songs found for your mood and era 🎵</div>';
+            if (!imageData) {
+                showError('No image to analyze');
                 return;
             }
 
-            songs.forEach(function(song) {
-                var div = document.createElement('div');
-                div.className = 'song-card';
-                div.innerHTML = 
-                    '<div class="song-name">' + (song.name || 'Unknown') + '</div>' +
-                    '<div class="song-artist">🎤 ' + (song.artist || 'Unknown Artist') + '</div>' +
-                    '<div class="song-meta">' +
-                        '<span>📅 ' + (song.year || 'N/A') + '</span>' +
-                        '<span>😊 ' + (song.mood || 'N/A') + '</span>' +
-                    '</div>';
-                container.appendChild(div);
+            // Get age value
+            const age = ageInput.value ? parseInt(ageInput.value) : null;
+
+            if (!age) {
+                showError('Please enter your age to get song recommendations');
+                return;
+            }
+
+            loading.classList.add('active');
+            errorMessage.classList.remove('active');
+            resultsSection.classList.remove('active');
+            analyzeBtn.disabled = true;
+
+            try {
+                const requestBody = { 
+                    image: imageData,
+                    age: age
+                };
+
+                console.log('Sending request with age:', age);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to analyze image');
+                }
+
+                console.log('Response received:', data);
+                displayResults(data);
+            } catch (error) {
+                console.error('Full error:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                loading.classList.remove('active');
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            currentImage = null;
+            fileInput.value = '';
+            imagePreview.src = '';
+            previewSection.classList.remove('active');
+            resultsSection.classList.remove('active');
+            errorMessage.classList.remove('active');
+            analyzeBtn.disabled = true;
+            stopWebcam();
+        });
+
+        function displayResults(data) {
+            document.getElementById('mainEmotion').textContent = data.predicted_emotion;
+            document.getElementById('mainConfidence').textContent = 
+                (data.confidence * 100).toFixed(1) + '%';
+
+            const allResults = document.getElementById('allResults');
+            allResults.innerHTML = '';
+
+            const sortedEmotions = Object.entries(data.all_emotions)
+                .sort((a, b) => b[1] - a[1]);
+
+            sortedEmotions.forEach(([emotion, score]) => {
+                const percentage = (score * 100).toFixed(1);
+                const barHTML = `
+                    <div class="emotion-bar">
+                        <div class="emotion-header">
+                            <span class="emotion-name">${emotion}</span>
+                            <span class="emotion-percentage">${percentage}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+                allResults.innerHTML += barHTML;
             });
+
+            // Display song recommendations if available
+            console.log('Song recommendations:', data.song_recommendations);
+            if (data.song_recommendations && data.song_recommendations.length > 0) {
+                displaySongRecommendations(data);
+            } else if (data.teenage_year_range) {
+                displayNoSongs(data);
+            }
+
+            resultsSection.classList.add('active');
+        }
+
+        function displaySongRecommendations(data) {
+            const songsSection = document.getElementById('songsSection');
+            const songsSubtitle = document.getElementById('songsSubtitle');
+            const songsList = document.getElementById('songsList');
+
+            const { start, end } = data.teenage_year_range;
+            songsSubtitle.textContent = `Songs from ${start}-${end} matching your ${data.predicted_emotion} mood`;
+
+            songsList.innerHTML = '';
+            data.song_recommendations.forEach(song => {
+                const songCard = `
+                    <div class="song-card">
+                        <div class="song-title">${song.song_name || 'Unknown Song'}</div>
+                        <div class="song-details">
+                            <span class="song-year">📅 ${song.year}</span>
+                            <span class="song-mood">😊 ${song.mood}</span>
+                        </div>
+                    </div>
+                `;
+                songsList.innerHTML += songCard;
+            });
+
+            songsSection.style.display = 'block';
+        }
+
+        function displayNoSongs(data) {
+            const songsSection = document.getElementById('songsSection');
+            const songsSubtitle = document.getElementById('songsSubtitle');
+            const songsList = document.getElementById('songsList');
+
+            const { start, end } = data.teenage_year_range;
+            songsSubtitle.textContent = `Looking for ${data.predicted_emotion} songs from ${start}-${end}`;
+
+            songsList.innerHTML = `
+                <div class="no-songs">
+                    😔 No songs found matching your mood from your teenage years.<br>
+                    Try a different photo or check back later!
+                </div>
+            `;
+
+            songsSection.style.display = 'block';
         }
 
         function showError(message) {
-            errorMsg.textContent = '⚠️ ' + message;
-            errorMsg.classList.remove('hidden');
-        }
-
-        function hideError() {
-            errorMsg.classList.add('hidden');
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
         }
     </script>
 </body>

@@ -362,7 +362,47 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:5000';
+        const API_URL = 'http://localhost:5001';
+
+        // REAL QUESTIONS ARRAYS
+        const cognitiveQuestions = [
+            "I worry excessively about different things",
+            "I find it hard to control my worrying",
+            "I have difficulty concentrating due to anxious thoughts",
+            "I often expect the worst to happen",
+            "My thoughts race when I feel anxious",
+            "I feel mentally restless or on edge",
+            "I struggle to relax my mind",
+            "I overthink small problems",
+            "I feel overwhelmed by my thoughts",
+            "I have trouble making decisions because of worry"
+        ];
+
+        const somaticQuestions = [
+            "I feel my heart racing or pounding",
+            "I experience shortness of breath",
+            "I feel tense or have muscle tightness",
+            "I experience sweating without physical activity",
+            "I feel dizzy or lightheaded",
+            "I have stomach discomfort or nausea",
+            "I feel fatigued easily",
+            "I experience trembling or shaking",
+            "I have headaches due to stress",
+            "I feel chest tightness"
+        ];
+
+        const affectiveQuestions = [
+            "I feel nervous or anxious most of the time",
+            "I feel fearful without a clear reason",
+            "I feel irritable easily",
+            "I feel emotionally overwhelmed",
+            "I feel restless or unable to sit still",
+            "I feel a constant sense of unease",
+            "I feel panic suddenly",
+            "I feel emotionally drained",
+            "I feel tense in social situations",
+            "I feel anxious about the future"
+        ];
 
         // Generate questions dynamically
         function generateQuestions() {
@@ -370,17 +410,14 @@
             const somaticContainer = document.getElementById('somatic-questions');
             const affectiveContainer = document.getElementById('affective-questions');
 
-            for (let i = 1; i <= 30; i++) {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question-item';
-                
-                const qNum = i.toString().padStart(2, '0');
-                const qId = `q${qNum}`;
-                
-                questionDiv.innerHTML = `
-                    <label class="question-label">Question ${i}</label>
+            function createQuestion(questionText, qId) {
+                const div = document.createElement('div');
+                div.className = 'question-item';
+
+                div.innerHTML = `
+                    <label class="question-label">${questionText}</label>
                     <div class="radio-group">
-                        ${[0, 1, 2, 3, 4].map(val => `
+                        ${[0,1,2,3,4].map(val => `
                             <div class="radio-option">
                                 <input type="radio" name="${qId}" value="${val}" id="${qId}_${val}" required>
                                 <label for="${qId}_${val}">${val}</label>
@@ -388,15 +425,23 @@
                         `).join('')}
                     </div>
                 `;
-
-                if (i <= 10) {
-                    cognitiveContainer.appendChild(questionDiv);
-                } else if (i <= 20) {
-                    somaticContainer.appendChild(questionDiv);
-                } else {
-                    affectiveContainer.appendChild(questionDiv);
-                }
+                return div;
             }
+
+            cognitiveQuestions.forEach((q, index) => {
+                const qId = `q${String(index + 1).padStart(2, '0')}`;
+                cognitiveContainer.appendChild(createQuestion(q, qId));
+            });
+
+            somaticQuestions.forEach((q, index) => {
+                const qId = `q${String(index + 11).padStart(2, '0')}`;
+                somaticContainer.appendChild(createQuestion(q, qId));
+            });
+
+            affectiveQuestions.forEach((q, index) => {
+                const qId = `q${String(index + 21).padStart(2, '0')}`;
+                affectiveContainer.appendChild(createQuestion(q, qId));
+            });
         }
 
         // Form submission

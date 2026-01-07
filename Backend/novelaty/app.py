@@ -1,236 +1,321 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from tensorflow.keras.models import load_model
+import tensorflow as tf
 import numpy as np
 import cv2
-import pandas as pd
-import os
-from werkzeug.utils import secure_filename
 import base64
+from io import BytesIO
+from PIL import Image
+import traceback
+import pandas as pd
+from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+CORS(app)
 
-# -----------------------------
-# CONFIGURATION
-# -----------------------------
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-MODEL_PATH = "model.h5"
-CSV_PATH = "songs.csv"
+# Load the trained model
+MODEL_PATH = 'fer2013_model.h5'
+SONGS_CSV_PATH = 'songs.csv'
+model = None
+songs_df = None
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# Constants
+IMAGE_WIDTH = 48
+IMAGE_HEIGHT = 48
+CLASS_NAMES = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-
-# -----------------------------
-# LOAD MODEL & DATASET
-# -----------------------------
-try:
-    model = load_model(MODEL_PATH)
-    song_df = pd.read_csv(CSV_PATH)
-    print("✓ Model and CSV loaded successfully!")
-except Exception as e:
-    print(f"Error loading model or CSV: {e}")
-    exit(1)
-
-# -----------------------------
-# CLASS MAP
-# -----------------------------
-class_map = {
-    0: 'angry',
-    1: 'disgust',
-    2: 'fear',
-    3: 'happy',
-    4: 'neutral',
-    5: 'sad',
-    6: 'surprise'
-}
-
-# -----------------------------
-# HELPER FUNCTIONS
-# -----------------------------
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def predict_image(image_path):
-    """Predict emotion from image"""
+def load_model():
+    global model
     try:
-        img = cv2.imread(image_path)
-        if img is None:
-            raise ValueError("Could not read image")
-        
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        img = cv2.resize(img, (48, 48))
-        img = img.astype("float") / 255.0
-        img = img.reshape(48, 48, 1)
-        img = np.expand_dims(img, axis=0)
-
-        pred = model.predict(img, verbose=0)
-        pred_idx = np.argmax(pred)
-        pred_label = class_map[pred_idx]
-        pred_prob = float(np.max(pred))
-        
-        return pred_label, pred_prob, pred.tolist()[0]
+        model = tf.keras.models.load_model(MODEL_PATH)
+        print("Model loaded successfully!")
+        print(f"Model input shape: {model.input_shape}")
+        print(f"Model output shape: {model.output_shape}")
     except Exception as e:
-        raise Exception(f"Prediction error: {str(e)}")
+        print(f"Error loading model: {e}")
+        traceback.print_exc()
+        model = None
+
+def load_songs():
+    global songs_df
+    try:
+        songs_df = pd.read_csv(SONGS_CSV_PATH)
+        print(f"Songs database loaded: {len(songs_df)} songs")
+        print(f"Columns in CSV: {songs_df.columns.tolist()}")
+        print(f"Available moods in database: {songs_df['mood'].unique()}")
+        # Convert mood column to lowercase for case-insensitive matching
+        songs_df['mood'] = songs_df['mood'].str.lower()
+        print(f"Sample data:\n{songs_df.head()}")
+    except Exception as e:
+        print(f"Warning: Could not load songs database: {e}")
+        traceback.print_exc()
+        songs_df = None
+
+load_model()
+load_songs()
+
+def preprocess_image(image):
+    """Preprocess image for model prediction"""
+    try:
+        print(f"Original image shape: {image.shape}")
+        
+        # Convert to grayscale if needed
+        if len(image.shape) == 3:
+            if image.shape[2] == 4:  # RGBA
+                image = cv2.cvtColor(image, cv2.COLOR_RGBA2GRAY)
+            elif image.shape[2] == 3:  # RGB
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        
+        print(f"After grayscale conversion: {image.shape}")
+        
+        # Resize to model input size
+        image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT))
+        print(f"After resize: {image.shape}")
+        
+        # Normalize pixel values
+        image = image.astype('float32') / 255.0
+        
+        # Reshape for model input (batch_size, height, width, channels)
+        image = np.reshape(image, (1, IMAGE_WIDTH, IMAGE_HEIGHT, 1))
+        print(f"Final shape: {image.shape}")
+        
+        return image
+    except Exception as e:
+        print(f"Error in preprocess_image: {e}")
+        traceback.print_exc()
+        raise
+
+def decode_base64_image(base64_string):
+    """Decode base64 image string to numpy array"""
+    try:
+        # Remove header if present
+        if ',' in base64_string:
+            base64_string = base64_string.split(',')[1]
+        
+        print(f"Base64 string length: {len(base64_string)}")
+        
+        # Decode base64
+        img_data = base64.b64decode(base64_string)
+        print(f"Decoded data length: {len(img_data)}")
+        
+        # Convert to PIL Image
+        img = Image.open(BytesIO(img_data))
+        print(f"PIL Image mode: {img.mode}, size: {img.size}")
+        
+        # Convert to RGB if necessary
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Convert to numpy array
+        img_array = np.array(img)
+        print(f"Numpy array shape: {img_array.shape}, dtype: {img_array.dtype}")
+        
+        return img_array
+    except Exception as e:
+        print(f"Error in decode_base64_image: {e}")
+        traceback.print_exc()
+        raise
 
 def get_teenage_year_range(current_year, age):
-    """Calculate teenage year range based on current age"""
-    teenage_offset = age - 15  # Center around age 15
+    """Calculate the teenage year range based on current age"""
+    # Assuming teenage peak is around 15 years old
+    # Calculate how many years ago the person was 15
+    teenage_offset = age - 15
     teenage_year = current_year - teenage_offset
-    return teenage_year - 5, teenage_year + 5
-
-def get_song_recommendations(df, mood, start_year, end_year, limit=10):
-    """Get song recommendations based on mood and year range"""
-    results = df[
-        (df["mood"].str.lower() == mood.lower()) &
-        (df["year"].between(start_year, end_year))
-    ]
     
-    if len(results) > limit:
-        results = results.sample(n=limit)
+    # Create a range of ±5 years around their teenage period
+    start_year = teenage_year - 5
+    end_year = teenage_year + 5
     
-    return results
+    return start_year, end_year
 
-# -----------------------------
-# ROUTES
-# -----------------------------
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({
-        "service": "Mood Detection & Song Recommendation API",
-        "version": "1.0",
-        "endpoints": {
-            "/predict": "POST - Upload image for mood detection",
-            "/health": "GET - Check service health"
-        }
-    })
-
-@app.route('/health', methods=['GET'])
-def health():
-    return jsonify({
-        "status": "healthy",
-        "model_loaded": model is not None,
-        "songs_loaded": len(song_df) > 0,
-        "total_songs": len(song_df)
-    })
-
-@app.route('/predict', methods=['POST'])
-def predict():
+def get_song_recommendations(mood, age, current_year=None, limit=10):
+    """Get song recommendations based on mood and age"""
+    if songs_df is None:
+        print("ERROR: songs_df is None!")
+        return [], None, None
+    
+    if current_year is None:
+        current_year = datetime.now().year
+    
     try:
-        # Check if image is provided
-        if 'image' not in request.files:
-            return jsonify({"error": "No image file provided"}), 400
-        
-        file = request.files['image']
-        
-        if file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
-        
-        if not allowed_file(file.filename):
-            return jsonify({"error": "Invalid file type. Allowed: jpg, jpeg, png"}), 400
-        
-        # Get parameters
-        age = int(request.form.get("age", 25))
-        current_year = int(request.form.get("current_year", 2025))
-        song_limit = int(request.form.get("limit", 10))
-        
-        # Validate age
-        if age < 10 or age > 100:
-            return jsonify({"error": "Age must be between 10 and 100"}), 400
-        
-        # Save uploaded file
-        filename = secure_filename(file.filename)
-        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(temp_path)
-        
-        # Predict mood
-        mood, confidence, all_predictions = predict_image(temp_path)
-        
         # Calculate teenage year range
         start_year, end_year = get_teenage_year_range(current_year, age)
+        print(f"Looking for '{mood}' songs from {start_year} to {end_year}")
         
-        # Get song recommendations
-        results = get_song_recommendations(song_df, mood, start_year, end_year, song_limit)
+        # Convert mood to lowercase for matching
+        mood_lower = mood.lower()
+        print(f"Mood (lowercase): '{mood_lower}'")
         
-        # Clean up temporary file
-        os.remove(temp_path)
+        # Show available moods in database
+        print(f"Available moods: {songs_df['mood'].unique()}")
         
-        # Prepare emotion probabilities
-        emotion_probs = {
-            class_map[i]: round(all_predictions[i] * 100, 2) 
-            for i in range(len(all_predictions))
+        # Filter songs by mood and year range
+        filtered_songs = songs_df[
+            (songs_df['mood'] == mood_lower) &
+            (songs_df['year'].between(start_year, end_year))
+        ]
+        
+        print(f"Found {len(filtered_songs)} songs matching criteria")
+        
+        # If no songs found in teenage years, expand search to all years
+        if filtered_songs.empty:
+            print(f"No songs found in teenage years, expanding search to all years...")
+            filtered_songs = songs_df[songs_df['mood'] == mood_lower]
+            print(f"Found {len(filtered_songs)} songs with '{mood}' mood (all years)")
+            
+            # If still empty, try to find any songs
+            if filtered_songs.empty:
+                print(f"Still no songs found! Checking database structure...")
+                print(f"Total songs in database: {len(songs_df)}")
+                print(f"Sample of songs_df:\n{songs_df.head()}")
+        
+        # Shuffle and limit results
+        if not filtered_songs.empty:
+            filtered_songs = filtered_songs.sample(n=min(limit, len(filtered_songs)))
+            print(f"Returning {len(filtered_songs)} songs")
+        
+        # Convert to list of dictionaries
+        recommendations = filtered_songs.to_dict('records')
+        
+        return recommendations, start_year, end_year
+    except Exception as e:
+        print(f"Error getting song recommendations: {e}")
+        traceback.print_exc()
+        return [], None, None
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/api/predict', methods=['POST'])
+def predict():
+    if model is None:
+        return jsonify({'error': 'Model not loaded. Please check if fer2013_model.h5 exists in the project directory.'}), 500
+    
+    try:
+        data = request.get_json()
+        print(f"\n{'='*60}")
+        print(f"NEW PREDICTION REQUEST")
+        print(f"{'='*60}")
+        print(f"Received request data keys: {data.keys() if data else 'None'}")
+        
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image provided in request'}), 400
+        
+        # Get age from request (optional)
+        age = data.get('age', None)
+        print(f"Age provided: {age}")
+        
+        # Decode image
+        print("\n[1] Decoding base64 image...")
+        image = decode_base64_image(data['image'])
+        
+        # Preprocess image
+        print("\n[2] Preprocessing image...")
+        processed_image = preprocess_image(image)
+        
+        # Make prediction
+        print("\n[3] Making prediction...")
+        predictions = model.predict(processed_image, verbose=0)
+        print(f"Prediction shape: {predictions.shape}")
+        print(f"Predictions: {predictions[0]}")
+        
+        # Get prediction probabilities
+        probabilities = predictions[0]
+        
+        # Get predicted class
+        predicted_class_idx = np.argmax(probabilities)
+        predicted_emotion = CLASS_NAMES[predicted_class_idx]
+        confidence = float(probabilities[predicted_class_idx])
+        
+        print(f"\n[4] PREDICTED EMOTION: {predicted_emotion.upper()} (confidence: {confidence:.2%})")
+        
+        # Create response with all emotions and their probabilities
+        emotion_scores = {}
+        for i, emotion in enumerate(CLASS_NAMES):
+            emotion_scores[emotion] = float(probabilities[i])
+        
+        response = {
+            'predicted_emotion': predicted_emotion,
+            'confidence': confidence,
+            'all_emotions': emotion_scores
         }
         
-        return jsonify({
-            "success": True,
-            "mood": mood,
-            "confidence": round(confidence * 100, 2),
-            "all_emotions": emotion_probs,
-            "age": age,
-            "teenage_year_range": {
-                "start": start_year,
-                "end": end_year
-            },
-            "recommended_songs": results.to_dict(orient="records"),
-            "total_recommendations": len(results)
-        })
+        # Add song recommendations if age is provided
+        if age is not None:
+            print(f"\n[5] Getting song recommendations...")
+            print(f"    - Emotion: {predicted_emotion}")
+            print(f"    - Age: {age}")
+            print(f"    - Songs DB loaded: {songs_df is not None}")
+            
+            if songs_df is not None:
+                recommendations, start_year, end_year = get_song_recommendations(
+                    predicted_emotion, 
+                    age
+                )
+                response['song_recommendations'] = recommendations
+                response['teenage_year_range'] = {
+                    'start': start_year,
+                    'end': end_year
+                }
+                print(f"\n[6] SONG RECOMMENDATIONS: {len(recommendations)} songs found")
+                if recommendations:
+                    print(f"    First song: {recommendations[0]}")
+            else:
+                print(f"\n[!] ERROR: Songs database not loaded!")
+        else:
+            print(f"\n[!] No age provided - skipping song recommendations")
         
+        print(f"\n{'='*60}")
+        print(f"REQUEST COMPLETED SUCCESSFULLY")
+        print(f"{'='*60}\n")
+        
+        return jsonify(response)
+    
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        error_msg = str(e)
+        print(f"\n{'='*60}")
+        print(f"ERROR IN PREDICT ENDPOINT")
+        print(f"{'='*60}")
+        print(f"Error message: {error_msg}")
+        traceback.print_exc()
+        print(f"{'='*60}\n")
+        return jsonify({'error': f'Prediction error: {error_msg}'}), 500
 
-@app.route('/moods', methods=['GET'])
-def get_moods():
-    """Get all available mood categories"""
-    return jsonify({
-        "moods": list(class_map.values())
-    })
-
-@app.route('/stats', methods=['GET'])
-def get_stats():
-    """Get dataset statistics"""
-    mood_counts = song_df['mood'].value_counts().to_dict()
-    year_range = {
-        "min": int(song_df['year'].min()),
-        "max": int(song_df['year'].max())
+@app.route('/api/health', methods=['GET'])
+def health():
+    health_data = {
+        'status': 'healthy',
+        'model_loaded': model is not None,
+        'songs_loaded': songs_df is not None,
+        'total_songs': len(songs_df) if songs_df is not None else 0,
+        'model_path': MODEL_PATH,
+        'expected_input_shape': f"({IMAGE_WIDTH}, {IMAGE_HEIGHT}, 1)",
+        'class_names': CLASS_NAMES
     }
     
-    return jsonify({
-        "total_songs": len(song_df),
-        "mood_distribution": mood_counts,
-        "year_range": year_range
-    })
+    if songs_df is not None:
+        health_data['available_moods'] = songs_df['mood'].unique().tolist()
+        health_data['csv_columns'] = songs_df.columns.tolist()
+    
+    return jsonify(health_data)
 
-# -----------------------------
-# ERROR HANDLERS
-# -----------------------------
-@app.errorhandler(413)
-def too_large(e):
-    return jsonify({"error": "File too large. Maximum size is 16MB"}), 413
-
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({"error": "Endpoint not found"}), 404
-
-@app.errorhandler(500)
-def server_error(e):
-    return jsonify({"error": "Internal server error"}), 500
-
-# -----------------------------
-# RUN SERVER
-# -----------------------------
-if __name__ == "__main__":
-    print("=" * 50)
-    print("🎵 Mood Detection & Song Recommendation API")
-    print("=" * 50)
-    print(f"Model: {MODEL_PATH}")
-    print(f"Songs Database: {CSV_PATH}")
-    print(f"Total Songs: {len(song_df)}")
-    print("=" * 50)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == '__main__':
+    print("\n" + "="*60)
+    print("STARTING EMOTION RECOGNITION & MUSIC RECOMMENDATION SERVER")
+    print("="*60)
+    print(f"Model loaded: {model is not None}")
+    print(f"Songs database loaded: {songs_df is not None}")
+    if songs_df is not None:
+        print(f"Total songs: {len(songs_df)}")
+        print(f"CSV columns: {songs_df.columns.tolist()}")
+        print(f"Available moods: {songs_df['mood'].unique()}")
+    print(f"Expected image size: {IMAGE_WIDTH}x{IMAGE_HEIGHT}")
+    print(f"Number of classes: {len(CLASS_NAMES)}")
+    print(f"Classes: {CLASS_NAMES}")
+    print("="*60)
+    print(f"Server running at: http://localhost:5000")
+    print(f"Health check at: http://localhost:5000/api/health")
+    print("="*60 + "\n")
+    app.run(debug=True, host='0.0.0.0', port=5000)
