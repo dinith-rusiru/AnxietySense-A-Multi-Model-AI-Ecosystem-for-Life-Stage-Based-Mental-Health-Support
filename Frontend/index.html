@@ -41,17 +41,52 @@
             font-size: 0.95em;
         }
 
-        .form-section {
+        .progress-container {
             margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .section-title {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 20px;
+            padding: 15px 20px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-weight: 600;
+            font-size: 1.1em;
         }
 
         .form-group {
@@ -81,71 +116,106 @@
             border-color: #667eea;
         }
 
-        .questions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
         .question-item {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             border: 2px solid #e9ecef;
+            margin-bottom: 20px;
         }
 
-        .question-label {
-            display: block;
-            margin-bottom: 8px;
+        .question-number {
+            color: #667eea;
+            font-weight: 600;
             font-size: 0.9em;
-            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .question-text {
+            font-size: 1.05em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 500;
         }
 
         .radio-group {
             display: flex;
+            flex-direction: column;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .radio-option {
             display: flex;
             align-items: center;
-            gap: 5px;
+            padding: 12px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
         }
 
         .radio-option input[type="radio"] {
-            width: auto;
+            margin-right: 10px;
             cursor: pointer;
+            width: 18px;
+            height: 18px;
         }
 
         .radio-option label {
             margin: 0;
             cursor: pointer;
             font-weight: normal;
-            font-size: 0.9em;
+            flex: 1;
         }
 
-        .submit-btn {
-            width: 100%;
+        .radio-option input[type="radio"]:checked + label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
             border: none;
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 20px;
+            transition: all 0.2s;
         }
 
-        .submit-btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .submit-btn:disabled {
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
@@ -156,17 +226,6 @@
             padding: 25px;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             border-radius: 10px;
-            display: none;
-        }
-
-        .result-container.show {
-            display: block;
-            animation: fadeIn 0.5s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .result-title {
@@ -243,11 +302,6 @@
         .loading {
             text-align: center;
             padding: 20px;
-            display: none;
-        }
-
-        .loading.show {
-            display: block;
         }
 
         .spinner {
@@ -271,100 +325,128 @@
         <h1>🧠 Anxiety Level Prediction</h1>
         <p class="subtitle">Complete the questionnaire to assess your anxiety level</p>
 
-        <form id="predictionForm">
-            <!-- Demographics Section -->
-            <div class="form-section">
-                <div class="section-title">📋 Demographics</div>
-                
-                <div class="form-group">
-                    <label for="age">Age:</label>
-                    <input type="number" id="age" name="age" min="18" max="120" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="gender">Gender:</label>
-                    <select id="gender" name="gender" required>
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="lives_alone">Living Situation:</label>
-                    <select id="lives_alone" name="lives_alone" required>
-                        <option value="">Select</option>
-                        <option value="0">Lives with others</option>
-                        <option value="1">Lives alone</option>
-                    </select>
-                </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
             </div>
-
-            <!-- Cognitive Questions (Q1-Q10) -->
-            <div class="form-section">
-                <div class="section-title">🧩 Cognitive Symptoms (Questions 1-10)</div>
-                <div class="questions-grid" id="cognitive-questions"></div>
-            </div>
-
-            <!-- Somatic Questions (Q11-Q20) -->
-            <div class="form-section">
-                <div class="section-title">💪 Somatic Symptoms (Questions 11-20)</div>
-                <div class="questions-grid" id="somatic-questions"></div>
-            </div>
-
-            <!-- Affective Questions (Q21-Q30) -->
-            <div class="form-section">
-                <div class="section-title">❤️ Affective Symptoms (Questions 21-30)</div>
-                <div class="questions-grid" id="affective-questions"></div>
-            </div>
-
-            <button type="submit" class="submit-btn">Get Prediction</button>
-        </form>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Analyzing your responses...</p>
+            <div class="progress-text" id="progressText">Page 1 of 4</div>
         </div>
 
-        <div class="error" id="error"></div>
-
-        <div class="result-container" id="results">
-            <div class="result-title">📊 Prediction Results</div>
+        <!-- Page 1: Demographics -->
+        <div class="page active" id="page1">
+            <div class="section-title">📋 Demographics Information</div>
             
-            <div class="result-item">
-                <span>Predicted Anxiety Level:</span>
-                <span class="result-value" id="predicted-level">-</span>
+            <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" min="18" max="120" required>
             </div>
 
-            <div class="result-item">
-                <span>Cognitive Score:</span>
-                <span class="result-value" id="cognitive-score">-</span>
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" required>
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
             </div>
 
-            <div class="result-item">
-                <span>Somatic Score:</span>
-                <span class="result-value" id="somatic-score">-</span>
+            <div class="form-group">
+                <label for="lives_alone">Living Situation:</label>
+                <select id="lives_alone" required>
+                    <option value="">Select</option>
+                    <option value="0">Lives with others</option>
+                    <option value="1">Lives alone</option>
+                </select>
             </div>
 
-            <div class="result-item">
-                <span>Affective Score:</span>
-                <span class="result-value" id="affective-score">-</span>
+            <div class="button-container">
+                <button class="btn btn-primary" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+
+        <!-- Page 2: Cognitive Questions -->
+        <div class="page" id="page2">
+            <div class="section-title">🧩 Cognitive Symptoms (Questions 1-10)</div>
+            <div id="cognitive-questions"></div>
+            <div class="button-container">
+                <button class="btn btn-secondary" onclick="prevPage()">← Back</button>
+                <button class="btn btn-primary" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+
+        <!-- Page 3: Somatic Questions -->
+        <div class="page" id="page3">
+            <div class="section-title">💪 Somatic Symptoms (Questions 11-20)</div>
+            <div id="somatic-questions"></div>
+            <div class="button-container">
+                <button class="btn btn-secondary" onclick="prevPage()">← Back</button>
+                <button class="btn btn-primary" onclick="nextPage()">Next →</button>
+            </div>
+        </div>
+
+        <!-- Page 4: Affective Questions -->
+        <div class="page" id="page4">
+            <div class="section-title">❤️ Affective Symptoms (Questions 21-30)</div>
+            <div id="affective-questions"></div>
+            <div class="button-container">
+                <button class="btn btn-secondary" onclick="prevPage()">← Back</button>
+                <button class="btn btn-primary" onclick="submitForm()">Get Prediction</button>
+            </div>
+        </div>
+
+        <!-- Page 5: Results -->
+        <div class="page" id="page5">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing your responses...</p>
             </div>
 
-            <div class="result-item">
-                <span>Total Score:</span>
-                <span class="result-value" id="total-score">-</span>
-            </div>
+            <div class="error" id="error"></div>
 
-            <div class="probability-bars" id="probabilities"></div>
+            <div class="result-container" id="results" style="display: none;">
+                <div class="result-title">📊 Prediction Results</div>
+                
+                <div class="result-item">
+                    <span>Predicted Anxiety Level:</span>
+                    <span class="result-value" id="predicted-level">-</span>
+                </div>
+
+                <div class="result-item">
+                    <span>Cognitive Score:</span>
+                    <span class="result-value" id="cognitive-score">-</span>
+                </div>
+
+                <div class="result-item">
+                    <span>Somatic Score:</span>
+                    <span class="result-value" id="somatic-score">-</span>
+                </div>
+
+                <div class="result-item">
+                    <span>Affective Score:</span>
+                    <span class="result-value" id="affective-score">-</span>
+                </div>
+
+                <div class="result-item">
+                    <span>Total Score:</span>
+                    <span class="result-value" id="total-score">-</span>
+                </div>
+
+                <div class="probability-bars" id="probabilities"></div>
+
+                <div class="button-container">
+                    <button class="btn btn-primary" onclick="goToEmotionRecognition()">Go to Emotion Recognition & Music 🎵</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:5001';
+        let currentPage = 1;
+        const totalPages = 5;
+        const formData = {};
 
-        // REAL QUESTIONS ARRAYS
         const cognitiveQuestions = [
             "I worry excessively about different things",
             "I find it hard to control my worrying",
@@ -404,23 +486,31 @@
             "I feel anxious about the future"
         ];
 
-        // Generate questions dynamically
         function generateQuestions() {
             const cognitiveContainer = document.getElementById('cognitive-questions');
             const somaticContainer = document.getElementById('somatic-questions');
             const affectiveContainer = document.getElementById('affective-questions');
 
-            function createQuestion(questionText, qId) {
+            function createQuestion(questionText, qId, qNumber) {
                 const div = document.createElement('div');
                 div.className = 'question-item';
 
+                const options = [
+                    { val: 0, label: "Not at all" },
+                    { val: 1, label: "Mild" },
+                    { val: 2, label: "Moderate" },
+                    { val: 3, label: "Severe" },
+                    { val: 4, label: "Very Severe" }
+                ];
+
                 div.innerHTML = `
-                    <label class="question-label">${questionText}</label>
+                    <div class="question-number">Question ${qNumber}</div>
+                    <div class="question-text">${questionText}</div>
                     <div class="radio-group">
-                        ${[0,1,2,3,4].map(val => `
+                        ${options.map(item => `
                             <div class="radio-option">
-                                <input type="radio" name="${qId}" value="${val}" id="${qId}_${val}" required>
-                                <label for="${qId}_${val}">${val}</label>
+                                <input type="radio" name="${qId}" value="${item.val}" id="${qId}_${item.val}">
+                                <label for="${qId}_${item.val}">${item.label}</label>
                             </div>
                         `).join('')}
                     </div>
@@ -430,48 +520,114 @@
 
             cognitiveQuestions.forEach((q, index) => {
                 const qId = `q${String(index + 1).padStart(2, '0')}`;
-                cognitiveContainer.appendChild(createQuestion(q, qId));
+                cognitiveContainer.appendChild(createQuestion(q, qId, index + 1));
             });
 
             somaticQuestions.forEach((q, index) => {
                 const qId = `q${String(index + 11).padStart(2, '0')}`;
-                somaticContainer.appendChild(createQuestion(q, qId));
+                somaticContainer.appendChild(createQuestion(q, qId, index + 11));
             });
 
             affectiveQuestions.forEach((q, index) => {
                 const qId = `q${String(index + 21).padStart(2, '0')}`;
-                affectiveContainer.appendChild(createQuestion(q, qId));
+                affectiveContainer.appendChild(createQuestion(q, qId, index + 21));
             });
         }
 
-        // Form submission
-        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function updateProgress() {
+            const progress = (currentPage / totalPages) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `Page ${currentPage} of ${totalPages}`;
+        }
 
-            const form = e.target;
-            const formData = new FormData(form);
+        function saveCurrentPageData() {
+            if (currentPage === 1) {
+                formData.age = parseInt(document.getElementById('age').value);
+                formData.gender = document.getElementById('gender').value;
+                formData.lives_alone = parseInt(document.getElementById('lives_alone').value);
+            } else {
+                const radios = document.querySelectorAll(`#page${currentPage} input[type="radio"]:checked`);
+                radios.forEach(radio => {
+                    formData[radio.name] = parseInt(radio.value);
+                });
+            }
+        }
+
+        function validateCurrentPage() {
+            if (currentPage === 1) {
+                const age = document.getElementById('age').value;
+                const gender = document.getElementById('gender').value;
+                const livesAlone = document.getElementById('lives_alone').value;
+                
+                if (!age || !gender || livesAlone === '') {
+                    alert('Please fill in all demographic fields');
+                    return false;
+                }
+            } else if (currentPage <= 4) {
+                const questions = document.querySelectorAll(`#page${currentPage} input[type="radio"]`);
+                const questionNames = new Set();
+                questions.forEach(q => questionNames.add(q.name));
+                
+                const answeredQuestions = new Set();
+                questions.forEach(q => {
+                    if (q.checked) answeredQuestions.add(q.name);
+                });
+                
+                if (answeredQuestions.size !== questionNames.size) {
+                    alert('Please answer all questions before proceeding');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function nextPage() {
+            if (!validateCurrentPage()) return;
             
-            // Build request data
+            saveCurrentPageData();
+            document.getElementById(`page${currentPage}`).classList.remove('active');
+            currentPage++;
+            document.getElementById(`page${currentPage}`).classList.add('active');
+            updateProgress();
+            window.scrollTo(0, 0);
+        }
+
+        function prevPage() {
+            document.getElementById(`page${currentPage}`).classList.remove('active');
+            currentPage--;
+            document.getElementById(`page${currentPage}`).classList.add('active');
+            updateProgress();
+            window.scrollTo(0, 0);
+        }
+
+        async function submitForm() {
+            if (!validateCurrentPage()) return;
+            
+            saveCurrentPageData();
+            
+            // Build complete data object
             const data = {
-                age: parseInt(formData.get('age')),
-                gender: formData.get('gender'),
-                lives_alone: parseInt(formData.get('lives_alone'))
+                age: formData.age,
+                gender: formData.gender,
+                lives_alone: formData.lives_alone
             };
 
             // Add all question responses
             for (let i = 1; i <= 30; i++) {
-                const qNum = i.toString().padStart(2, '0');
-                const qId = `q${qNum}`;
-                const value = formData.get(qId);
-                data[qId] = value ? parseInt(value) : 0;
+                const qId = `q${String(i).padStart(2, '0')}`;
+                data[qId] = formData[qId] || 0;
             }
 
-            // Debug: log the data being sent
             console.log('Sending data:', data);
 
-            // Show loading
-            document.getElementById('loading').classList.add('show');
-            document.getElementById('results').classList.remove('show');
+            // Show results page with loading
+            document.getElementById(`page${currentPage}`).classList.remove('active');
+            currentPage = 5;
+            document.getElementById(`page${currentPage}`).classList.add('active');
+            updateProgress();
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
             document.getElementById('error').classList.remove('show');
 
             try {
@@ -493,9 +649,9 @@
             } catch (error) {
                 showError('Failed to connect to the server. Make sure the Flask app is running.');
             } finally {
-                document.getElementById('loading').classList.remove('show');
+                document.getElementById('loading').style.display = 'none';
             }
-        });
+        }
 
         function displayResults(result) {
             document.getElementById('predicted-level').textContent = result.predicted_gas_level;
@@ -504,28 +660,12 @@
             document.getElementById('affective-score').textContent = result.scores.affective;
             document.getElementById('total-score').textContent = result.scores.total;
 
-            // Display probabilities
             const probContainer = document.getElementById('probabilities');
             probContainer.innerHTML = '<div style="margin-top: 20px; font-weight: 600;">Class Probabilities:</div>';
 
-            Object.entries(result.class_probabilities).forEach(([cls, prob]) => {
-                const percentage = (prob * 100).toFixed(1);
-                probContainer.innerHTML += `
-                    <div class="probability-item">
-                        <div class="probability-label">
-                            <span>Level ${cls}</span>
-                            <span>${percentage}%</span>
-                        </div>
-                        <div class="probability-bar">
-                            <div class="probability-fill" style="width: ${percentage}%">
-                                ${percentage}%
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+            
 
-            document.getElementById('results').classList.add('show');
+            document.getElementById('results').style.display = 'block';
         }
 
         function showError(message) {
@@ -534,8 +674,15 @@
             errorDiv.classList.add('show');
         }
 
+        function goToEmotionRecognition() {
+            // Replace with the actual path to your emotion recognition page
+             window.open('iindex1.html');
+          
+        }
+
         // Initialize
         generateQuestions();
+        updateProgress();
     </script>
 </body>
 </html>
