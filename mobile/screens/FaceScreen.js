@@ -154,6 +154,8 @@ export default function FaceScreen({ navigation }) {
 
       console.log("📡 Sending image to:", `${BASE_URL}/face/predict`);
 
+      //API CALL
+
       const response = await fetch(`${BASE_URL}/face/predict`, {
         method: "POST",
         body: formData,

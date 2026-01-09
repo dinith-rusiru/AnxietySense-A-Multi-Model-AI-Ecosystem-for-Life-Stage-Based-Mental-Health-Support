@@ -87,6 +87,8 @@ export default function QuestionnaireScreen({ navigation, route }) {
     const baseURL =
       Platform.OS === "web" ? "http://localhost:8000" : "http://10.0.2.2:8000";
 
+    //API CALL
+
     try {
       const response = await fetch(`${baseURL}/dass21/predict`, {
         method: "POST",
