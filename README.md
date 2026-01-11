@@ -1,13 +1,15 @@
-# 🧠 AnxietySense: A Multi-Model AI Ecosystem for Life-Stage-Based Mental Health Support
+#  AnxietySense: A Multi-Model AI Ecosystem for Life-Stage-Based Mental Health Support
+**Group ID:** - 25-26J-376
 
 **Project Type:** Final Year Research Project  
 **Institution:** Sri Lanka Institute of Information Technology (SLIIT)  
 **Degree Program:** BSc (Hons) in Information Technology  
-**Year:** 2025 – 2026  
+**Year:** 2025 – 2026
+
 
 ---
 
-## 📖 Overview
+##  Overview
 
 **AnxietySense** is an AI-powered mental health support ecosystem designed to detect, analyze, and manage anxiety across different life stages using a **multi-modal approach**.
 
@@ -17,7 +19,7 @@ The platform focuses on **adolescents, young adults, pregnant women, and elderly
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 - Multi-modal anxiety detection using questionnaires, facial emotions, and voice analysis  
 - Life-stage-specific anxiety analysis models  
@@ -28,13 +30,13 @@ The platform focuses on **adolescents, young adults, pregnant women, and elderly
 
 ---
 
-## 🧩 System Components
+##  System Components
 
 AnxietySense consists of **four tightly integrated research components**, each addressing a specific life stage or analytical function.
 
 ---
 
-### 1️⃣ Questionnaire-Based Anxiety Assessment Module
+### 1️. Questionnaire-Based Anxiety Assessment Module
 
 This module uses **clinically validated anxiety questionnaires** to establish a psychological baseline for users.
 
@@ -47,7 +49,7 @@ This module uses **clinically validated anxiety questionnaires** to establish a 
 
 ---
 
-### 2️⃣ Facial Emotion Recognition Module
+### 2️. Facial Emotion Recognition Module
 
 This component analyzes **real-time facial expressions** during assessments to capture non-verbal emotional indicators related to anxiety.
 
@@ -60,7 +62,7 @@ This component analyzes **real-time facial expressions** during assessments to c
 
 ---
 
-### 3️⃣ Voice-Based Anxiety & Emotion Analysis Module
+### 3️. Voice-Based Anxiety & Emotion Analysis Module
 
 This module processes voice recordings to identify **anxiety-related vocal patterns**.
 
@@ -75,7 +77,7 @@ This module processes voice recordings to identify **anxiety-related vocal patte
 
 ---
 
-### 4️⃣ Intelligent Risk Analysis & Intervention Module
+### 4️. Intelligent Risk Analysis & Intervention Module
 
 This component combines outputs from questionnaires, facial emotion analysis to provide a **holistic anxiety evaluation** and targeted interventions.
 
@@ -88,7 +90,37 @@ This component combines outputs from questionnaires, facial emotion analysis to 
 
 ---
 
-## ⚙️ How the System Works
+
+
+## System Architecture Diagram
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     Mobile Application Layer                     │
+│                      (React Native / Expo)                       │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            │ HTTPS / REST API
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                      API Gateway Layer                           │
+│                    (FastAPI / Python 3.9+)                       │
+└───┬───────────────┬───────────────┬───────────────┬─────────────┘
+    │               │               │               │
+┌───▼──────┐  ┌────▼─────┐  ┌─────▼────┐  ┌───────▼──────┐
+│Question- │  │  Facial  │  │  Voice   │  │     Risk     │
+│naire     │  │ Emotion  │  │ Emotion  │  │  Analysis &  │
+│Analysis  │  │Recognition│  │ Analysis │  │ Intervention │
+│Service   │  │  Service │  │  Service │  │   Service    │
+└───┬──────┘  └────┬─────┘  └─────┬────┘  └───────┬──────┘
+    │               │               │               │
+└───┴───────────────┴───────────────┴───────────────┴─────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │  Data Storage  │
+                    │   (Local DB)   │
+                    └────────────────┘
+                    
+##  How the System Works
 
 1. User selects their life stage  
 2. Questionnaire-based assessment is completed  
@@ -99,7 +131,7 @@ This component combines outputs from questionnaires, facial emotion analysis to 
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 **Frontend**
 - React / React Native  
@@ -111,11 +143,12 @@ This component combines outputs from questionnaires, facial emotion analysis to 
 **AI / Machine Learning**
 - TensorFlow / TensorFlow Lite  
 - Convolutional Neural Networks (CNN)  
-- Speech signal processing techniques   
+- Speech signal processing techniques
+- Transfer learning(mobilenet) 
 
 ---
 
-### 🛠️Installation
+### Installation
 
 
 **Clone the Repository**
@@ -135,7 +168,7 @@ cd mobile
 npm install
 ```
 
-### 🔧Configuration
+### Configuration
 
 **Backend Setup**
 ###### Create Environment File
@@ -157,7 +190,7 @@ EXPO_PUBLIC_API_URL=http://localhost:8001/api
 ```
 ---
 
-## 🚀Running the Application
+## Running the Application
 **Start the Backend Server**
 ```
 cd backend
@@ -173,21 +206,8 @@ npx expo start
 ```
 ---
 
-## 📋 Production Build
-**Build the Frontend**
-```
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 8001
-```
----
-**Start Backend in Production**
-```
-cd mobile
-npx expo build
-```
----
 
-## 🧪 Testing & Evaluation
+##  Testing & Evaluation
 
 - Questionnaire scoring accuracy  
 - Facial emotion recognition accuracy (≥ 85%)  
@@ -198,7 +218,7 @@ npx expo build
 
 ---
 
-## ⚠️ Known Limitations
+## Known Limitations
 
 - Facial emotion recognition depends on lighting and camera quality  
 - Voice analysis is sensitive to background noise  
@@ -207,7 +227,7 @@ npx expo build
 
 ---
 
-## 📈 Future Enhancements
+##  Future Enhancements
 
 - Federated learning for privacy-preserving model improvement  
 - Multi-language expansion  
@@ -216,10 +236,10 @@ npx expo build
 
 ---
 
-## 👥 Contributors
+##  Contributors
 
 - **Rusiru K.K.D** – IT22145284  
-  *Adolescent Anxiety Detection*
+  *child Anxiety Detection*
 
 - **Karunarathna K.M.N.D** – IT22099686  
   *Young Adult Anxiety Management* 
@@ -228,12 +248,8 @@ npx expo build
   *Pregnancy-Specific Anxiety Detection*    
 
 - **Nisansala D.V.D** – IT22121110  
-  *Geriatric Anxiety Management*  
+  *adult Anxiety Management*  
 
 ---
 
-## 📄 License
-
-This project is developed as part of a **Final Year Research Project at SLIIT**.  
-All rights reserved © 2025–2026 **AnxietySense Research Team**.
 
