@@ -94,32 +94,10 @@ This component combines outputs from questionnaires, facial emotion analysis to 
 
 ## System Architecture Diagram
 
-┌─────────────────────────────────────────────────────────────────┐
-│                     Mobile Application Layer                     │
-│                      (React Native / Expo)                       │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-                            │ HTTPS / REST API
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│                      API Gateway Layer                           │
-│                    (FastAPI / Python 3.9+)                       │
-└───┬───────────────┬───────────────┬───────────────┬─────────────┘
-    │               │               │               │
-┌───▼──────┐  ┌────▼─────┐  ┌─────▼────┐  ┌───────▼──────┐
-│Question- │  │  Facial  │  │  Voice   │  │     Risk     │
-│naire     │  │ Emotion  │  │ Emotion  │  │  Analysis &  │
-│Analysis  │  │Recognition│  │ Analysis │  │ Intervention │
-│Service   │  │  Service │  │  Service │  │   Service    │
-└───┬──────┘  └────┬─────┘  └─────┬────┘  └───────┬──────┘
-    │               │               │               │
-└───┴───────────────┴───────────────┴───────────────┴─────────────┘
-                            │
-                    ┌───────▼────────┐
-                    │  Data Storage  │
-                    │   (Local DB)   │
-                    └────────────────┘
-                    
+<img width="809" height="575" alt="image" src="https://github.com/user-attachments/assets/c935b6cd-7d5a-482c-9b61-cd018a314f28" />
+
+
+
 ##  How the System Works
 
 1. User selects their life stage  
