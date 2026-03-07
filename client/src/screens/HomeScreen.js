@@ -2,25 +2,26 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 export default function HomeScreen({ navigation }) {
   const buttons = [
-    { label: '👶 Child',    color: '#3498DB', screen: 'ChildScreen'   },
-    { label: '🧑 Adult',    color: '#E74C3C', screen: 'AdultScreen'   },
-    { label: '🤰 Pregnant', color: '#9B59B6', screen: 'PregnantScreen'},
-    { label: '👴 Elder',    color: '#2ECC71', screen: 'ElderScreen'   },
+    { label:'👶 Child',    sub:'Child anxiety detection',  color:'#3498DB', screen:'ChildScreen'   },
+    { label:'🧑 Adult',    sub:'Adult anxiety detection',  color:'#E74C3C', screen:'ChildScreen'   },
+    { label:'🤰 Pregnant', sub:'Pregnancy anxiety',        color:'#9B59B6', screen:'ChildScreen'   },
+    { label:'👴 Elder',    sub:'Elder anxiety detection',  color:'#2ECC71', screen:'ChildScreen'   },
   ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Anxiety Detection System</Text>
+      <Text style={styles.title}>🧠 Anxiety Detection</Text>
       <Text style={styles.subtitle}>Select a category to begin</Text>
-
       <View style={styles.grid}>
-        {buttons.map((btn) => (
+        {buttons.map(btn => (
           <TouchableOpacity
             key={btn.label}
             style={[styles.button, { backgroundColor: btn.color }]}
             onPress={() => navigation.navigate(btn.screen)}
+            activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>{btn.label}</Text>
+            <Text style={styles.btnLabel}>{btn.label}</Text>
+            <Text style={styles.btnSub}>{btn.sub}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -29,48 +30,11 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex           : 1,
-    backgroundColor: '#1a1a2e',
-    alignItems     : 'center',
-    justifyContent : 'center',
-    padding        : 20,
-  },
-  title: {
-    fontSize  : 26,
-    fontWeight: 'bold',
-    color     : '#fff',
-    marginBottom: 8,
-    textAlign : 'center',
-  },
-  subtitle: {
-    fontSize    : 14,
-    color       : '#aaa',
-    marginBottom: 40,
-  },
-  grid: {
-    width         : '100%',
-    flexDirection : 'row',
-    flexWrap      : 'wrap',
-    justifyContent: 'space-between',
-    gap           : 16,
-  },
-  button: {
-    width        : '47%',
-    height       : 120,
-    borderRadius : 16,
-    alignItems   : 'center',
-    justifyContent: 'center',
-    elevation    : 5,
-    shadowColor  : '#000',
-    shadowOffset : { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius : 6,
-  },
-  buttonText: {
-    color     : '#fff',
-    fontSize  : 18,
-    fontWeight: 'bold',
-    textAlign : 'center',
-  },
+  container : { flex:1, backgroundColor:'#1a1a2e', alignItems:'center', justifyContent:'center', padding:24 },
+  title     : { fontSize:28, fontWeight:'bold', color:'#fff', marginBottom:8, textAlign:'center' },
+  subtitle  : { fontSize:14, color:'#aaa', marginBottom:40, textAlign:'center' },
+  grid      : { width:'100%', flexDirection:'row', flexWrap:'wrap', justifyContent:'space-between', gap:16 },
+  button    : { width:'47%', height:130, borderRadius:18, alignItems:'center', justifyContent:'center', padding:12, elevation:6 },
+  btnLabel  : { color:'#fff', fontSize:18, fontWeight:'bold', textAlign:'center' },
+  btnSub    : { color:'rgba(255,255,255,0.8)', fontSize:11, textAlign:'center', marginTop:6 },
 });
