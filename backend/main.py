@@ -1,379 +1,92 @@
-# from fastapi import FastAPI, UploadFile, File
-# from fastapi.middleware.cors import CORSMiddleware
-# from pydantic import BaseModel
-# import joblib
-# import numpy as np
-# import pandas as pd
-# import os
-# import uuid
-# import tensorflow as tf
+# backend/main.py
 
-# from voice_api.utils.feature_extractor import (
-#     extract_gender_features,
-#     extract_emotion_features,
-# )
-
-# # ---------------- PATHS ----------------
-# BASE_DIR = os.path.dirname(__file__)
-# TEMP_DIR = os.path.join(BASE_DIR, "temp_audio")
-# os.makedirs(TEMP_DIR, exist_ok=True)
-
-# SVM_MODEL_PATH = os.path.join(BASE_DIR, "model", "svm_total_score_model.pkl")
-# SCALER_PATH = os.path.join(BASE_DIR, "model", "scaler.pkl")
-
-# GENDER_MODEL_PATH = os.path.join(BASE_DIR, "voice_api", "model", "gender_svm_model.pkl")
-# GENDER_SCALER_PATH = os.path.join(BASE_DIR, "voice_api", "model", "gender_scaler.pkl")
-
-# EMOTION_MODEL_PATH = os.path.join(BASE_DIR, "voice_api", "model", "emotion_model.keras")
-# EMOTION_ENCODER_PATH = os.path.join(
-#     BASE_DIR, "voice_api", "model", "emotion_label_encoder.pkl"
-# )
-
-# # ---------------- LOAD MODELS ----------------
-# svm_model = joblib.load(SVM_MODEL_PATH)
-# svm_scaler = joblib.load(SCALER_PATH)
-
-# gender_model = joblib.load(GENDER_MODEL_PATH)
-# gender_scaler = joblib.load(GENDER_SCALER_PATH)
-
-# emotion_model = tf.keras.models.load_model(EMOTION_MODEL_PATH)
-# emotion_encoder = joblib.load(EMOTION_ENCODER_PATH)
-
-# # ---------------- APP ----------------
-# app = FastAPI(title="AnxietySense API")
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # ---------------- HELPERS ----------------
-# def anxiety_level(score):
-#     if score <= 20:
-#         return "Minimal Anxiety"
-#     elif score <= 25:
-#         return "Mild Anxiety"
-#     elif score <= 41:
-#         return "Moderate Anxiety"
-#     else:
-#         return "Severe Anxiety"
-
-
-# def emotion_weight(emotion):
-#     return {
-#         "happy": -3,
-#         "sad": 2,
-#         "fear": 4,
-#         "anger": 3,
-#         "neutral": 0,
-#     }.get(emotion, 0)
-
-# # ---------------- VOICE ----------------
-# @app.post("/voice/analyze")
-# async def analyze_voice(file: UploadFile = File(...)):
-#     try:
-#         uid = str(uuid.uuid4())
-#         ext = file.filename.split(".")[-1]
-#         path = os.path.join(TEMP_DIR, f"{uid}.{ext}")
-
-#         with open(path, "wb") as f:
-#             f.write(await file.read())
-
-#         print("🎤 Voice file saved:", path)
-
-#         # -------- Gender --------
-#         gender_features = extract_gender_features(path)
-#         if gender_features is None:
-#             print("⚠️ No clear voice detected")
-#             return {
-#                 "success": False,
-#                 "error": "Voice is too low or unclear. Please try again."
-#             }
-
-#         gender_scaled = gender_scaler.transform(
-#             gender_features.reshape(1, -1)
-#         )
-#         gender_pred = gender_model.predict(gender_scaled)[0]
-#         gender = "female" if gender_pred == 1 else "male"
-
-#         print("🔍 Predicted gender:", gender)
-
-#         # 🚫 BLOCK MALE VOICES
-#         if gender == "male":
-#             print("🚫 Male voice detected — blocked")
-#             return {
-#                 "success": False,
-#                 "error": "This feature is designed only for pregnant women. Please try again."
-#             }
-
-#         # -------- Emotion --------
-#         emotion_features = extract_emotion_features(path)
-#         if emotion_features is None:
-#             emotion = "neutral"
-#             confidence = 0.0
-#         else:
-#             inp = np.expand_dims(emotion_features, axis=(0, 2))
-#             probs = emotion_model.predict(inp)[0]
-#             idx = int(np.argmax(probs))
-#             emotion = emotion_encoder.inverse_transform([idx])[0]
-#             confidence = float(probs[idx])
-
-#             if confidence < 0.5:
-#                 emotion = "neutral"
-
-#         print("😊 Detected emotion:", emotion, "confidence:", confidence)
-
-#         return {
-#             "success": True,
-#             "gender": gender,
-#             "emotion": emotion,
-#             "emotion_confidence": round(confidence, 2),
-#         }
-
-#     except Exception as e:
-#         print("❌ Voice analysis error:", e)
-#         return {
-#             "success": False,
-#             "error": "Voice analysis failed. Please try again."
-#         }
-
-# # ---------------- QUESTIONNAIRE ----------------
-# class QuestionnaireInput(BaseModel):
-#     answers: dict
-#     emotion: str
-
-
-# @app.post("/anxiety/final")
-# def final_anxiety(data: QuestionnaireInput):
-#     df = pd.DataFrame([data.answers])
-#     df = df.reindex(columns=[f"Q{i}" for i in range(1, 32)], fill_value=0)
-
-#     scaled = svm_scaler.transform(df)
-#     score = float(svm_model.predict(scaled)[0])
-
-#     final_score = score + emotion_weight(data.emotion)
-
-#     return {
-#         "questionnaire_score": round(score, 2),
-#         "emotion": data.emotion,
-#         "final_score": round(final_score, 2),
-#         "anxiety_level": anxiety_level(final_score),
-#     }
-
-
-# @app.get("/")
-# def root():
-#     return {"status": "AnxietySense backend running"}
-
-
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import numpy as np
-import pandas as pd
-import os
-import uuid
-import tensorflow as tf
 
-from voice_api.utils.feature_extractor import (
-    extract_gender_features,
-    extract_emotion_features,
-)
+app = FastAPI(title="DASS-21 ML API")
 
-# ---------------- PATHS ----------------
-BASE_DIR = os.path.dirname(__file__)
-TEMP_DIR = os.path.join(BASE_DIR, "temp_audio")
-os.makedirs(TEMP_DIR, exist_ok=True)
-
-SVM_MODEL_PATH = os.path.join(BASE_DIR, "model", "svm_total_score_model.pkl")
-SCALER_PATH = os.path.join(BASE_DIR, "model", "scaler.pkl")
-
-GENDER_MODEL_PATH = os.path.join(BASE_DIR, "voice_api", "model", "gender_svm_model.pkl")
-GENDER_SCALER_PATH = os.path.join(BASE_DIR, "voice_api", "model", "gender_scaler.pkl")
-
-EMOTION_MODEL_PATH = os.path.join(BASE_DIR, "voice_api", "model", "emotion_model.keras")
-EMOTION_ENCODER_PATH = os.path.join(
-    BASE_DIR, "voice_api", "model", "emotion_label_encoder.pkl"
-)
-
-# ---------------- LOAD MODELS ----------------
-svm_model = joblib.load(SVM_MODEL_PATH)
-svm_scaler = joblib.load(SCALER_PATH)
-
-gender_model = joblib.load(GENDER_MODEL_PATH)
-gender_scaler = joblib.load(GENDER_SCALER_PATH)
-
-emotion_model = tf.keras.models.load_model(EMOTION_MODEL_PATH)
-emotion_encoder = joblib.load(EMOTION_ENCODER_PATH)
-
-# ---------------- APP ----------------
-app = FastAPI(title="AnxietySense API")
+# -------- CORS Setup --------
+origins = [
+    "http://localhost:8081",  # Expo Web
+    "http://localhost:3000",  # if using React web
+    "http://127.0.0.1:8081",  # Expo web alternative
+    "*"  # Or allow all origins during development
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,   # or ["*"] for dev
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------------- HELPERS ----------------
-def anxiety_level(score):
-    if score <= 20:
-        return "Minimal Anxiety"
-    elif score <= 25:
-        return "Mild Anxiety"
-    elif score <= 41:
-        return "Moderate Anxiety"
+# Load trained model
+model = joblib.load("model/random_forest_dass21_model.pkl")
+
+# -------- Request Schema --------
+class DASSInput(BaseModel):
+    Q1: int
+    Q2: int
+    Q3: int
+    Q4: int
+    Q5: int
+    Q6: int
+    Q7: int
+    Q8: int
+    Q9: int
+    Q10: int
+    Q11: int
+    Q12: int
+    Q13: int
+    Q14: int
+    Q15: int
+    Q16: int
+    Q17: int
+    Q18: int
+    Q19: int
+    Q20: int
+    Q21: int
+
+# -------- Helper --------
+def get_level(score):
+    if score <= 9:
+        return "Normal"
+    elif score <= 18:
+        return "Mild"
+    elif score <= 27:
+        return "Moderate"
+    elif score <= 36:
+        return "Severe"
     else:
-        return "Severe Anxiety"
+        return "Extremely Severe"
 
+# -------- API Route --------
+# @app.post("/predict")
+# def predict(data: DASSInput):
+#     values = np.array([list(data.dict().values())])
+#     prediction = model.predict(values)[0]
+#     level = get_level(prediction)
 
-def emotion_weight(emotion):
-    return {
-        "happy": -3,
-        "sad": 2,
-        "fear": 4,
-        "anger": 3,
-        "neutral": 0,
-    }.get(emotion, 0)
+#     return {
+#         "Total_Final_Score": int(prediction),
+#         "Total_Level": level
+#     }
 
+@app.post("/predict")
+def predict(data: DASSInput):
+    print("📥 DASS21 data received:", data.dict())
 
-# ✅ NEW — voice heuristic scoring
-def voice_anxiety_from_emotion(emotion):
-    mapping = {
-        "happy": 10,
-        "neutral": 18,
-        "sad": 28,
-        "anger": 32,
-        "fear": 40,
-    }
-    score = mapping.get(emotion, 18)
-    level = anxiety_level(score)
-    return score, level
+    values = np.array([list(data.dict().values())])
+    prediction = model.predict(values)[0]
+    level = get_level(prediction)
 
-
-# ---------------- VOICE ----------------
-@app.post("/voice/analyze")
-async def analyze_voice(file: UploadFile = File(...)):
-    try:
-        uid = str(uuid.uuid4())
-        ext = file.filename.split(".")[-1]
-        path = os.path.join(TEMP_DIR, f"{uid}.{ext}")
-
-        with open(path, "wb") as f:
-            f.write(await file.read())
-
-        print("🎤 Voice file saved:", path)
-
-        # -------- Gender --------
-        gender_features = extract_gender_features(path)
-        if gender_features is None:
-            return {
-                "success": False,
-                "error": "Voice is too low or unclear. Please try again."
-            }
-
-        gender_scaled = gender_scaler.transform(
-            gender_features.reshape(1, -1)
-        )
-        gender_pred = gender_model.predict(gender_scaled)[0]
-        gender = "female" if gender_pred == 1 else "male"
-
-        # 🚫 BLOCK MALE
-        if gender == "male":
-            return {
-                "success": False,
-                "error": "This feature is designed only for pregnant women. Please try again."
-            }
-
-        # -------- Emotion --------
-        emotion_features = extract_emotion_features(path)
-        if emotion_features is None:
-            emotion = "neutral"
-            confidence = 0.0
-        else:
-            inp = np.expand_dims(emotion_features, axis=(0, 2))
-            probs = emotion_model.predict(inp)[0]
-            idx = int(np.argmax(probs))
-            emotion = emotion_encoder.inverse_transform([idx])[0]
-            confidence = float(probs[idx])
-
-            if confidence < 0.5:
-                emotion = "neutral"
-
-        # ✅ NEW voice anxiety
-        voice_score, voice_level = voice_anxiety_from_emotion(emotion)
-
-        return {
-            "success": True,
-            "gender": gender,
-            "emotion": emotion,
-            "emotion_confidence": round(confidence, 2),
-            "voice_anxiety_score": round(voice_score, 2),
-            "voice_anxiety_level": voice_level,
-        }
-
-    except Exception as e:
-        print("❌ Voice analysis error:", e)
-        return {
-            "success": False,
-            "error": "Voice analysis failed. Please try again."
-        }
-
-
-# ---------------- QUESTIONNAIRE ----------------
-class QuestionnaireInput(BaseModel):
-    answers: dict | None = None
-    emotion: str = "neutral"
-    voice_score: float | None = None
-
-
-@app.post("/anxiety/final")
-def final_anxiety(data: QuestionnaireInput):
-
-    questionnaire_score = None
-    final_score = None
-    mode = "unknown"
-
-    # ---------- questionnaire ----------
-    if data.answers:
-        df = pd.DataFrame([data.answers])
-        df = df.reindex(columns=[f"Q{i}" for i in range(1, 32)], fill_value=0)
-
-        scaled = svm_scaler.transform(df)
-        questionnaire_score = float(svm_model.predict(scaled)[0])
-
-    # ---------- combined ----------
-    if questionnaire_score is not None and data.voice_score is not None:
-        print("✅ COMBINED MODE TRIGGERED")
-        final_score = questionnaire_score + emotion_weight(data.emotion)
-        mode = "combined"
-
-    # ---------- questionnaire only ----------
-    elif questionnaire_score is not None:
-        final_score = questionnaire_score
-        mode = "questionnaire_only"
-
-    # ---------- voice only ----------
-    elif data.voice_score is not None:
-        final_score = data.voice_score
-        mode = "voice_only"
-
-    else:
-        return {"error": "No valid input provided"}
+    print("📊 Score:", prediction, "Level:", level)
 
     return {
-        "mode": mode,
-        "questionnaire_score": questionnaire_score,
-        "emotion": data.emotion,
-        "final_score": round(final_score, 2),
-        "anxiety_level": anxiety_level(final_score),
+        "Total_Final_Score": int(prediction),
+        "Total_Level": level
     }
-
-
-@app.get("/")
-def root():
-    return {"status": "AnxietySense backend running"}

@@ -1,41 +1,58 @@
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environments
+# python venv
 venv/
-env/
 .venv/
+env/
 
-# Environment variables
-.env
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Logs
-*.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Python build
-build/
-dist/
-*.egg-info/
-
-# Jupyter checkpoints
+# jupyter
 .ipynb_checkpoints/
+*-checkpoint.ipynb
 
-# Model files (optional if very large)
-*.h5
-*.keras
-*.pt
-*.pth
+# common
+.DS_Store
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# VSCode
-.vscode/
+# dependencies
+node_modules/
 
-# Testing
-.pytest_cache/
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
 
-models/
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
