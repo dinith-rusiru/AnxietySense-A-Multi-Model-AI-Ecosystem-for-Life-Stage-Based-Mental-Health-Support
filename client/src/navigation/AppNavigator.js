@@ -9,6 +9,15 @@ import FinalResultScreen from '../screens/dinth/FinalResultScreen';
 // import AdultScreen    from '../screens/member2/AdultScreen';
 // import PregnantScreen from '../screens/member3/PregnantScreen';
 // import ElderScreen    from '../screens/member4/ElderScreen';
+import WelcomeScreen from "./screens/WelcomeScreen";
+import IntroScreen from "./screens/IntroScreen";
+import FaceScreen from "./screens/FaceScreen";
+import QuestionnaireScreen from "./screens/QuestionnaireScreen";
+import ResultScreen from "./screens/ResultScreen";
+import ActivitiesScreen from "./screens/ActivitiesScreen";
+import ActivityDetailScreen from "./screens/ActivityDetailScreen";
+import Chatbot from "./screens/chatbot";
+import DashboardScreen from "./screens/DashboardScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +36,17 @@ export default function AppNavigator() {
       <Stack.Screen name='DrawingScreen'    component={DrawingScreen}     options={{ title: '🎨 Step 3: Draw a House'     }} />
       <Stack.Screen name='FinalResultScreen'component={FinalResultScreen} options={{ title: '📋 Full Assessment Report'  }} />
       {/* Other team members add screens here */}
+
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
+        <Stack.Screen name="Intro" component={IntroScreen} />
+        <Stack.Screen name="Face" component={FaceScreen} />
+        <Stack.Screen name="Questionnaire1" component={QuestionnaireScreen} />
+        <Stack.Screen name="Result1" component={ResultScreen} />
+        <Stack.Screen name="Activities1" component={ActivitiesScreen} />
+        <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
+        <Stack.Screen name="Chatbot" component={Chatbot} />
+        <Stack.Screen name="Dashboard1" component={DashboardScreen} />
+
     </Stack.Navigator>
   );
 }
