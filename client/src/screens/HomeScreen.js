@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 export default function HomeScreen({ navigation }) {
   const buttons = [
       { label:'👶 Child',    sub:'Child anxiety detection',  color:'#3498DB', screen:'ChildScreen' },
-  { label:'🧑 Adult',    sub:'Adult anxiety detection',  color:'#E74C3C', screen:'Home'        }, // placeholder, update if you have AdultScreen
+  { label:'🧑 Adult',    sub:'Adult anxiety detection',  color:'#E74C3C', screen:'Welcome'        }, // placeholder, update if you have AdultScreen
   { label:'🤰 Pregnant', sub:'Pregnancy anxiety',        color:'#9B59B6', screen:'WelcomeScreen'     },
   { label:'👴 Elder',    sub:'Elder anxiety detection',  color:'#2ECC71', screen:'Home'        }, // placeholder, update if you have ElderScreen
   ];

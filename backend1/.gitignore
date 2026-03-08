@@ -1,0 +1,57 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python build
+build/
+dist/
+*.egg-info/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Model files (optional if very large)
+*.h5
+*.keras
+*.pt
+*.pth
+
+# VSCode
+.vscode/
+
+# Testing
+.pytest_cache/
+
+models/
+
+temp_audio/
+# Ignore generated audio files
+backend/stored_data/audio/
+backend/stored_data/results/
+
+# Ignore temporary audio
+backend/temp_audio/
+
+# Ignore all wav and json files inside those folders
+backend/stored_data/**/*.wav
+backend/stored_data/**/*.json
+backend/temp_audio/*.wav
+backend/stored_data/audio/*.wav
+backend/stored_data/results/*.json
+backend/temp_audio/*.wav
