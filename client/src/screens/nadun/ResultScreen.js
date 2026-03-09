@@ -529,16 +529,60 @@ const combineScores = (emotionScore, questionnaireScore = null) => {
     return { finalScore: null, finalLevel: null };
   }
 
-  let finalScore;
-  if (questionnaireScore !== null) {
-    const normalizedQ = (questionnaireScore / 63) * 100;
-    finalScore = 0.6 * normalizedQ + 0.4 * emotionScore;
-  } else {
-    finalScore = emotionScore;
-  }
+//   let finalScore;
+//   if (questionnaireScore !== null) {
+//     const normalizedQ = (questionnaireScore / 63) * 100;
+//     finalScore = 0.6 * normalizedQ + 0.4 * emotionScore;
+//   } else {
+//     finalScore = emotionScore;
+//   }
 
+//   return { finalScore, finalLevel: getAnxietyLevelFromScore(finalScore) };
+// };
+
+
+
+
+
+
+
+
+
+// Calculate the final anxiety score
+let finalScore;
+
+// Check if the questionnaire score is available
+if (questionnaireScore !== null) {
+
+  // Convert the questionnaire score (max 63) into a percentage (0–100)
+  const normalizedQ = (questionnaireScore / 63) * 100;
+
+  // Combine scores using weighted average
+  // 60% weight for questionnaire score
+  // 40% weight for emotion detection score
+  finalScore = 0.6 * normalizedQ + 0.4 * emotionScore;
+
+} else {
+
+  // If questionnaire score is not available,
+  // use only the emotion detection score
+  finalScore = emotionScore;
+}
+
+// Return the final anxiety score and the anxiety level
+// getAnxietyLevelFromScore() converts the score into levels
+// such as Normal, Mild, Moderate, Severe, etc.
   return { finalScore, finalLevel: getAnxietyLevelFromScore(finalScore) };
 };
+
+
+
+
+
+
+
+
+
 
 const anxietyActivities = {
   Normal: [
