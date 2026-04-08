@@ -1,88 +1,6 @@
-// // ActivitiesScreen.js
-// import React from "react";
-// import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-
-// // Suggested activities based on anxiety level
-// const anxietyActivities = {
-//   Normal: [
-//     "Daily physical exercise (e.g., jogging or cycling)",
-//     "Journaling positive experiences or gratitude",
-//     "Engaging in hobbies or creative outlets"
-//   ],
-//   Mild: [
-//     "Short meditation or mindfulness exercises",
-//     "Regular aerobic exercise",
-//     "Organize your daily routine"
-//   ],
-//   Moderate: [
-//     "Practice deep breathing exercises (4-7-8 or box breathing)",
-//     "Yoga or tai chi for relaxation",
-//     "Talk to supportive friends or family"
-//   ],
-//   Severe: [
-//     "Seek professional counseling or therapy",
-//     "Practice grounding or relaxation techniques",
-//     "Maintain a structured daily routine"
-//   ],
-//   "Extremely Severe": [
-//     "Immediate consultation with a mental health professional",
-//     "Engage in short mindfulness or grounding exercises",
-//     "Ensure close support from family or friends"
-//   ]
-// };
-
-// export default function ActivitiesScreen({ route, navigation }) {
-//   const { finalLevel } = route.params;
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.title}>Suggested Activities</Text>
-//       <Text style={styles.level}>Your Anxiety Level: {finalLevel}</Text>
-
-//       {anxietyActivities[finalLevel].map((activity, index) => (
-//         <Text key={index} style={styles.activity}>
-//           • {activity}
-//         </Text>
-//       ))}
-
-//       <TouchableOpacity
-//         style={styles.button}
-//         onPress={() => navigation.popToTop()}
-//       >
-//         <Text style={styles.buttonText}>Go Home</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flexGrow: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     padding: 30,
-//     backgroundColor: "#fff"
-//   },
-//   title: { fontSize: 26, fontWeight: "bold", marginBottom: 10 },
-//   level: { fontSize: 20, color: "#2563eb", marginBottom: 20 },
-//   activity: { fontSize: 16, marginBottom: 10, textAlign: "left", width: "100%" },
-//   button: {
-//     backgroundColor: "#2563eb",
-//     padding: 14,
-//     borderRadius: 12,
-//     marginTop: 20,
-//     width: "60%",
-//     alignItems: "center"
-//   },
-//   buttonText: { color: "#fff", fontWeight: "bold" }
-// });
-
-
-// ActivitiesScreen.js
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 
-// Suggested activities based on anxiety level
 const anxietyActivities = {
   Normal: [
     "Daily physical exercise (e.g., jogging or cycling)",
@@ -114,84 +32,179 @@ const anxietyActivities = {
 export default function ActivitiesScreen({ route, navigation }) {
   const { finalLevel } = route.params;
 
-  // Get activities for the user’s anxiety level
   const activities = anxietyActivities[finalLevel] || [];
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Suggested Activities</Text>
-      <Text style={styles.level}>Your Anxiety Level: {finalLevel}</Text>
 
-      {activities.map((activity, index) => (
+      {/* Header */}
+      <View style={styles.headerCard}>
+        <Text style={styles.title}>Recommended Activities</Text>
+        <Text style={styles.levelLabel}>Your Anxiety Level</Text>
+        <Text style={styles.level}>{finalLevel}</Text>
+      </View>
+
+      {/* Activity Cards */}
+      <View style={styles.activitiesContainer}>
+        {activities.map((activity, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.activityCard}
+            onPress={() =>
+              navigation.navigate("ActivityDetail", { activityName: activity })
+            }
+          >
+            <View style={styles.activityIcon}>
+              <Text style={styles.iconText}>🧠</Text>
+            </View>
+
+            <Text style={styles.activityText}>{activity}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.buttonContainer}>
+
         <TouchableOpacity
-          key={index}
-          style={styles.activityButton}
-          onPress={() =>
-            navigation.navigate("ActivityDetail1", { activityName: activity })
-          }
+          style={styles.homeButton}
+          onPress={() => navigation.popToTop()}
         >
-          <Text style={styles.activityText}>{activity}</Text>
+          <Text style={styles.buttonText}>Go Home</Text>
         </TouchableOpacity>
-      ))}
 
         <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.popToTop()}
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         >
-        <Text style={styles.buttonText}>Go Home</Text>
+          <Text style={styles.buttonText}>Back to Result</Text>
         </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        >
-        <Text style={styles.buttonText}>Back to Result</Text>
-        </TouchableOpacity>
-
-         <TouchableOpacity
-          style={styles.button}
+        <TouchableOpacity
+          style={styles.chatButton}
           onPress={() => navigation.replace("Chatbot")}
         >
-                <Text style={styles.buttonText}>Chatbot</Text>
-              </TouchableOpacity>
+          <Text style={styles.buttonText}>Chat with AI</Text>
+        </TouchableOpacity>
+
+      </View>
 
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flexGrow: 1,
-    padding: 30,
-    backgroundColor: "#fff",
-    alignItems: "center"
+    padding: 20,
+    backgroundColor: "#f8fafc"
   },
-  title: { fontSize: 26, fontWeight: "bold", marginBottom: 10 },
-  level: { fontSize: 20, color: "#2563eb", marginBottom: 20 },
-  activityButton: {
+
+  headerCard: {
     backgroundColor: "#2563eb",
-    width: "100%",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 12,
-    alignItems: "center"
+    padding: 25,
+    borderRadius: 20,
+    marginBottom: 25,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6
   },
-  activityText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  button: {
+
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 10
+  },
+
+  levelLabel: {
+    fontSize: 15,
+    color: "#e2e8f0"
+  },
+
+  level: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginTop: 5
+  },
+
+  activitiesContainer: {
+    marginBottom: 25
+  },
+
+  activityCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3
+  },
+
+  activityIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: "#e0ecff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 15
+  },
+
+  iconText: {
+    fontSize: 20
+  },
+
+  activityText: {
+    flex: 1,
+    fontSize: 16,
+    color: "#1e293b",
+    fontWeight: "500"
+  },
+
+  buttonContainer: {
+    alignItems: "center",
+    marginTop: 10
+  },
+
+  homeButton: {
     backgroundColor: "#64748b",
-    padding: 14,
+    padding: 15,
     borderRadius: 12,
-    marginTop: 20,
-    width: "60%",
+    width: "80%",
+    alignItems: "center",
+    marginBottom: 12
+  },
+
+  backButton: {
+    backgroundColor: "#f59e0b",
+    padding: 15,
+    borderRadius: 12,
+    width: "80%",
+    alignItems: "center",
+    marginBottom: 12
+  },
+
+  chatButton: {
+    backgroundColor: "#10b981",
+    padding: 15,
+    borderRadius: 12,
+    width: "80%",
     alignItems: "center"
   },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  backButton: {
-  backgroundColor: "#f59e0b",
-  padding: 14,
-  borderRadius: 12,
-  marginTop: 10,
-  width: "60%",
-  alignItems: "center"
-},
+
+  buttonText: {
+    color: "#ffffff",
+    fontWeight: "bold",
+    fontSize: 16
+  }
+
 });

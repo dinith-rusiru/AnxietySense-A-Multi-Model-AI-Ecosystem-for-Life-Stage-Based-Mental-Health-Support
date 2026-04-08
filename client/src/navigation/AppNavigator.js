@@ -1,11 +1,16 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import HomeScreen        from '../screens/HomeScreen';
+// 
+import HomeScreen1        from '../screens/HomeScreen';
+  
+import HomeScreen        from '../screens/dinth/HomeScreen';
 import ChildScreen       from '../screens/dinth/ChildScreen';
 import ResultScreen      from '../screens/dinth/ResultScreen';
 import DrawingScreen     from '../screens/dinth/DrawingScreen';
+import DrawingResultScreen from '../screens/dinth/DrawingResultScreen';
 import FinalResultScreen from '../screens/dinth/FinalResultScreen';
-
+import ActivityScreen    from '../screens/dinth/ActivityScreen';
+import WeeklyScreen      from '../screens/dinth/WeeklyScreen';
 // import AdultScreen    from '../screens/member2/AdultScreen';
 // import PregnantScreen from '../screens/member3/PregnantScreen';
 // import ElderScreen    from '../screens/member4/ElderScreen';
@@ -29,6 +34,15 @@ import ActivityDetailScreen1 from "../screens/nadun/ActivityDetailScreen";
 import Chatbot from "../screens/nadun/chatbot";
 import DashboardScreen1 from "../screens/nadun/DashboardScreen";
 
+import HomeScreen111                  from '../screens/dulari/HomeScreen111';
+import QuestionnaireScreennn         from '../screens/dulari/QuestionnaireScreen';
+import CameraScreen                from '../screens/dulari/CameraScreen';
+import RelaxScreen                 from '../screens/dulari/RelaxScreen';
+import EldersScreen                from '../screens/dulari/EldersScreen';
+import ElderViewScreen             from '../screens/dulari/ElderViewScreen';
+import RecommendedActivitiesScreen from '../screens/dulari/RecommendedActivitiesScreen';
+import ActivityPlayerScreen        from '../screens/dulari/ActivityPlayerScreen';
+import ActivityHistoryScreen       from '../screens/dulari/ActivityHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,11 +55,18 @@ export default function AppNavigator() {
         headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
-      <Stack.Screen name='Home'             component={HomeScreen}        options={{ title: '🧠 Anxiety Detection'       }} />
-      <Stack.Screen name='ChildScreen'      component={ChildScreen}       options={{ title: '👶 Step 1: Face Scan'        }} />
-      <Stack.Screen name='ResultScreen'     component={ResultScreen}      options={{ title: '📊 Step 2: Scan Result'      }} />
-      <Stack.Screen name='DrawingScreen'    component={DrawingScreen}     options={{ title: '🎨 Step 3: Draw a House'     }} />
-      <Stack.Screen name='FinalResultScreen'component={FinalResultScreen} options={{ title: '📋 Full Assessment Report'  }} />
+      <Stack.Screen name='Home1'             component={HomeScreen1}        options={{ title: '🧠 Anxiety Detection'       }} />
+
+      <Stack.Screen name='Home'             component={HomeScreen}        />
+      <Stack.Screen name='ChildScreen'      component={ChildScreen}       />
+      <Stack.Screen name='ResultScreen'     component={ResultScreen}      />
+
+      <Stack.Screen name='DrawingScreen'    component={DrawingScreen}     />
+      <Stack.Screen name='DrawingResultScreen'component={DrawingResultScreen} />
+
+      <Stack.Screen name='FinalResultScreen'component={FinalResultScreen} />
+      <Stack.Screen name='ActivityScreen'   component={ActivityScreen}    />
+      <Stack.Screen name='WeeklyScreen'     component={WeeklyScreen}      />
       {/* Other team members add screens here */}
 
         <Stack.Screen name="WelcomeScreen" component={Welcome} />
@@ -67,6 +88,15 @@ export default function AppNavigator() {
         <Stack.Screen name="Chatbot" component={Chatbot} />
         <Stack.Screen name="Dashboard1" component={DashboardScreen1} />
 
+          <Stack.Screen name="Home111"                  component={HomeScreen111}                  options={{ title: 'Home' }} />
+          <Stack.Screen name="Questionnaireee"         component={QuestionnaireScreennn}         options={{ title: 'Questionnaire' }} />
+          <Stack.Screen name="Camera"                component={CameraScreen}                options={{ title: 'Camera' }} />
+          <Stack.Screen name="Relax"                 component={RelaxScreen}                 options={{ title: 'Relax' }} />
+          <Stack.Screen name="Elders"                component={EldersScreen}                options={{ title: 'Elders Questionnaire' }} />
+          <Stack.Screen name="ElderView"             component={ElderViewScreen}             options={{ title: 'Elders' }} />
+          <Stack.Screen name="RecommendedActivities" component={RecommendedActivitiesScreen} options={{ title: 'Activities' }} />
+          <Stack.Screen name="ActivityPlayer"        component={ActivityPlayerScreen}        options={{ title: 'Activity' }} />
+          <Stack.Screen name="ActivityHistory"       component={ActivityHistoryScreen}       options={{ title: 'History' }} />
     </Stack.Navigator>
   );
 }

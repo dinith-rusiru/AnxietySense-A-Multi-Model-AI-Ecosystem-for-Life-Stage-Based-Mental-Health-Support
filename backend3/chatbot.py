@@ -21,10 +21,10 @@ app.add_middleware(
 
 # Load the saved ML model and vectorizer
 try:
-    classifier = joblib.load(r'D:\projects\New folder (3)\test\backend\model\chatbot model\emotion_model_chatbot.pkl')
-    vectorizer = joblib.load(r'D:\projects\New folder (3)\test\backend\model\chatbot model\vectorizer.pkl')
+    classifier = joblib.load(r'D:\projects\New folder (3)\test\backend3\model\chatbot model\emotion_model_chatbot.pkl')
+    vectorizer = joblib.load(r'D:\projects\New folder (3)\test\backend3\model\chatbot model\vectorizer.pkl')
 
-    with open(r'D:\projects\New folder (3)\test\backend\model\chatbot model\emotions_mapping.json', 'r') as f:
+    with open(r'D:\projects\New folder (3)\test\backend3\model\chatbot model\emotions_mapping.json', 'r') as f:
         emotions_mapping = json.load(f)
 
 except Exception as e:
@@ -34,7 +34,7 @@ except Exception as e:
     emotions_mapping = {0: 'Sadness', 1: 'Joy', 2: 'Love', 3: 'Anger', 4: 'Fear', 5: 'Surprise'}
 
 # Initialize Gemini API
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
+genai.configure(api_key="AIzaSyBZ6uihel7GFKhUHlrn2TRTcAA8UVxGXys")
 
 try:
     gemini_model = genai.GenerativeModel('gemini-2.5-flash')

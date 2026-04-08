@@ -1959,7 +1959,7 @@ export default function FaceScreen() {
   const streamRef = useRef(null);
 
   const BASE_URL =
-    Platform.OS === "web" ? "http://localhost:8000" : "http://10.0.2.2:8000";
+    Platform.OS === "web" ? "http://localhost:8002" : "http://10.0.2.2:8002";
 
   /* =======================
      IMAGE PICK / CAMERA

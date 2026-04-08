@@ -1,1431 +1,441 @@
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   FlatList,
-//   TouchableOpacity,
-//   ScrollView,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// // Helper to get formatted date
-// const getToday = () => new Date().toISOString().split("T")[0];
-
-// // Helper to get last 7 days
-// const getLast7Days = () => {
-//   const dates = [];
-//   for (let i = 6; i >= 0; i--) {
-//     const d = new Date();
-//     d.setDate(d.getDate() - i);
-//     dates.push(d.toISOString().split("T")[0]);
-//   }
-//   return dates;
-// };
-
-// export default function DashboardScreen({ navigation }) {
-//   const [activities, setActivities] = useState([]);
-
-//   const loadActivities = async () => {
-//     try {
-//       const data = await AsyncStorage.getItem("completedActivities");
-//       const parsed = data ? JSON.parse(data) : [];
-//       setActivities(parsed);
-//     } catch (err) {
-//       console.log("Error loading activities:", err);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadActivities();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   // ---------------- DAILY / WEEKLY STATS ----------------
-//   const today = getToday();
-//   const last7Days = getLast7Days();
-
-//   const dailyActivities = activities.filter((a) => a.date === today);
-//   const weeklyActivities = activities.filter((a) =>
-//     last7Days.includes(a.date)
-//   );
-
-//   const renderItem = ({ item }) => (
-//     <View style={styles.activityCard}>
-//       <Text style={styles.activityTitle}>{item.title}</Text>
-//       <Text style={styles.activityType}>Type: {item.type}</Text>
-//       <Text style={styles.activityDate}>Completed on: {item.date}</Text>
-//     </View>
-//   );
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.header}>Dashboard</Text>
-
-//       {/* ================= DAILY SUMMARY ================= */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Today's Progress ({today})</Text>
-//         <Text style={styles.summaryText}>
-//           Completed Activities: {dailyActivities.length}
-//         </Text>
-//         {dailyActivities.length > 0 ? (
-//           <FlatList
-//             data={dailyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//             contentContainerStyle={{ paddingTop: 8 }}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>No activities completed today.</Text>
-//         )}
-//       </View>
-
-//       {/* ================= WEEKLY SUMMARY ================= */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Weekly Progress</Text>
-//         <Text style={styles.summaryText}>
-//           Activities Completed This Week: {weeklyActivities.length}
-//         </Text>
-//         {weeklyActivities.length > 0 ? (
-//           <FlatList
-//             data={weeklyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//             contentContainerStyle={{ paddingTop: 8 }}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>No activities completed this week.</Text>
-//         )}
-//       </View>
-
-//       {/* ================= NAVIGATION BUTTONS ================= */}
-//       <TouchableOpacity
-//         style={styles.dashboardBtn}
-//         onPress={() => navigation.navigate("Activities")}
-//       >
-//         <Text style={styles.dashboardText}>Go to Activities</Text>
-//       </TouchableOpacity>
-
-//       <TouchableOpacity
-//         style={styles.dashboardBtn}
-//         onPress={() => navigation.navigate("Result")}
-//       >
-//         <Text style={styles.dashboardText}>Back to Results</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// // ================= STYLES =================
-// const styles = StyleSheet.create({
-//   container: {
-//     padding: 20,
-//     backgroundColor: "#f4f6fb",
-//     flexGrow: 1,
-//   },
-//   header: {
-//     fontSize: 26,
-//     fontWeight: "700",
-//     color: "#1e40af",
-//     marginBottom: 20,
-//     textAlign: "center",
-//   },
-//   summaryCard: {
-//     backgroundColor: "#ffffff",
-//     borderRadius: 16,
-//     padding: 16,
-//     marginBottom: 20,
-//     elevation: 3,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.05,
-//     shadowOffset: { width: 0, height: 3 },
-//     shadowRadius: 5,
-//   },
-//   summaryTitle: {
-//     fontSize: 18,
-//     fontWeight: "700",
-//     color: "#1e3a8a",
-//     marginBottom: 8,
-//   },
-//   summaryText: {
-//     fontSize: 16,
-//     marginBottom: 12,
-//     color: "#374151",
-//   },
-//   activityCard: {
-//     backgroundColor: "#e0f2fe",
-//     borderRadius: 12,
-//     padding: 12,
-//     marginBottom: 10,
-//   },
-//   activityTitle: {
-//     fontSize: 16,
-//     fontWeight: "600",
-//     color: "#1e40af",
-//   },
-//   activityType: {
-//     fontSize: 14,
-//     color: "#334155",
-//   },
-//   activityDate: {
-//     fontSize: 13,
-//     color: "#475569",
-//   },
-//   noActivity: {
-//     fontSize: 14,
-//     color: "#6b7280",
-//     fontStyle: "italic",
-//   },
-//   dashboardBtn: {
-//     marginTop: 12,
-//     backgroundColor: "#22c55e",
-//     paddingVertical: 14,
-//     borderRadius: 12,
-//     alignItems: "center",
-//   },
-//   dashboardText: {
-//     color: "#fff",
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-// });
-
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   FlatList,
-//   TouchableOpacity,
-//   ScrollView,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// const getToday = () => new Date().toISOString().split("T")[0];
-
-// const getLast7Days = () => {
-//   const dates = [];
-//   for (let i = 6; i >= 0; i--) {
-//     const d = new Date();
-//     d.setDate(d.getDate() - i);
-//     dates.push(d.toISOString().split("T")[0]);
-//   }
-//   return dates;
-// };
-
-// export default function DashboardScreen({ navigation }) {
-//   const [activities, setActivities] = useState([]);
-//   const [anxietyLevel, setAnxietyLevel] = useState("Unknown");
-
-//   const loadData = async () => {
-//     try {
-//       const activityData = await AsyncStorage.getItem("completedActivities");
-//       const levelData = await AsyncStorage.getItem("anxietyLevel");
-
-//       const parsedActivities = activityData ? JSON.parse(activityData) : [];
-
-//       setActivities(parsedActivities);
-//       setAnxietyLevel(levelData ?? "Not Tested");
-//     } catch (err) {
-//       console.log("Error loading data:", err);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadData();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   const today = getToday();
-//   const last7Days = getLast7Days();
-
-//   const dailyActivities = activities.filter((a) => a.date === today);
-//   const weeklyActivities = activities.filter((a) =>
-//     last7Days.includes(a.date)
-//   );
-
-//   const streak = new Set(activities.map((a) => a.date)).size;
-
-//   const renderItem = ({ item }) => (
-//     <View style={styles.activityCard}>
-//       <Text style={styles.activityTitle}>{item.title}</Text>
-//       <Text style={styles.activityType}>{item.type}</Text>
-//       <Text style={styles.activityDate}>{item.date}</Text>
-//     </View>
-//   );
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.header}>Mental Health Dashboard</Text>
-
-//       {/* Anxiety Level Card */}
-//       <View style={styles.levelCard}>
-//         <Text style={styles.levelTitle}>Your Anxiety Level</Text>
-//         <Text style={styles.levelValue}>{anxietyLevel}</Text>
-//         <Text style={styles.levelHint}>
-//           Continue doing activities to improve your mental health
-//         </Text>
-//       </View>
-
-//       {/* Progress Cards */}
-//       <View style={styles.progressRow}>
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{dailyActivities.length}</Text>
-//           <Text style={styles.progressText}>Today</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{weeklyActivities.length}</Text>
-//           <Text style={styles.progressText}>This Week</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{streak}</Text>
-//           <Text style={styles.progressText}>Streak</Text>
-//         </View>
-//       </View>
-
-//       {/* Daily Activities */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Today's Activities</Text>
-
-//         {dailyActivities.length > 0 ? (
-//           <FlatList
-//             data={dailyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>
-//             No activities completed today
-//           </Text>
-//         )}
-//       </View>
-
-//       {/* Weekly Activities */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Weekly Activities</Text>
-
-//         {weeklyActivities.length > 0 ? (
-//           <FlatList
-//             data={weeklyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>
-//             No activities completed this week
-//           </Text>
-//         )}
-//       </View>
-
-//       {/* Navigation Buttons */}
-
-//       <TouchableOpacity
-//         style={styles.mainBtn}
-//         onPress={() => navigation.navigate("Activities")}
-//       >
-//         <Text style={styles.btnText}>Start Activities</Text>
-//       </TouchableOpacity>
-
-//       <TouchableOpacity
-//         style={styles.secondaryBtn}
-//         onPress={() => navigation.navigate("Result")}
-//       >
-//         <Text style={styles.btnText}>Retake Anxiety Test</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     padding: 20,
-//     backgroundColor: "#f3f6ff",
-//     flexGrow: 1,
-//   },
-
-//   header: {
-//     fontSize: 26,
-//     fontWeight: "700",
-//     color: "#1e3a8a",
-//     textAlign: "center",
-//     marginBottom: 20,
-//   },
-
-//   levelCard: {
-//     backgroundColor: "#4f46e5",
-//     padding: 20,
-//     borderRadius: 16,
-//     marginBottom: 20,
-//   },
-
-//   levelTitle: {
-//     color: "#c7d2fe",
-//     fontSize: 16,
-//   },
-
-//   levelValue: {
-//     color: "#fff",
-//     fontSize: 28,
-//     fontWeight: "bold",
-//     marginTop: 6,
-//   },
-
-//   levelHint: {
-//     color: "#e0e7ff",
-//     marginTop: 8,
-//   },
-
-//   progressRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginBottom: 20,
-//   },
-
-//   progressCard: {
-//     backgroundColor: "#ffffff",
-//     width: "30%",
-//     padding: 15,
-//     borderRadius: 14,
-//     alignItems: "center",
-//     elevation: 3,
-//   },
-
-//   progressNumber: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     color: "#1e40af",
-//   },
-
-//   progressText: {
-//     color: "#6b7280",
-//   },
-
-//   summaryCard: {
-//     backgroundColor: "#ffffff",
-//     borderRadius: 16,
-//     padding: 16,
-//     marginBottom: 20,
-//   },
-
-//   summaryTitle: {
-//     fontSize: 18,
-//     fontWeight: "bold",
-//     marginBottom: 10,
-//   },
-
-//   activityCard: {
-//     backgroundColor: "#eef2ff",
-//     padding: 12,
-//     borderRadius: 10,
-//     marginBottom: 8,
-//   },
-
-//   activityTitle: {
-//     fontWeight: "600",
-//     fontSize: 15,
-//   },
-
-//   activityType: {
-//     fontSize: 13,
-//     color: "#6b7280",
-//   },
-
-//   activityDate: {
-//     fontSize: 12,
-//     color: "#9ca3af",
-//   },
-
-//   noActivity: {
-//     fontStyle: "italic",
-//     color: "#9ca3af",
-//   },
-
-//   mainBtn: {
-//     backgroundColor: "#22c55e",
-//     padding: 14,
-//     borderRadius: 12,
-//     alignItems: "center",
-//     marginBottom: 10,
-//   },
-
-//   secondaryBtn: {
-//     backgroundColor: "#3b82f6",
-//     padding: 14,
-//     borderRadius: 12,
-//     alignItems: "center",
-//   },
-
-//   btnText: {
-//     color: "#fff",
-//     fontWeight: "600",
-//     fontSize: 16,
-//   },
-// });
-
-
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   FlatList,
-//   TouchableOpacity,
-//   ScrollView,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// const getToday = () => new Date().toISOString().split("T")[0];
-
-// const getLast7Days = () => {
-//   const dates = [];
-//   for (let i = 6; i >= 0; i--) {
-//     const d = new Date();
-//     d.setDate(d.getDate() - i);
-//     dates.push(d.toISOString().split("T")[0]);
-//   }
-//   return dates;
-// };
-
-// export default function DashboardScreen({ navigation }) {
-//   const [activities, setActivities] = useState([]);
-//   const [anxietyLevel, setAnxietyLevel] = useState("Unknown");
-//   const [history, setHistory] = useState([]);
-
-//   const loadData = async () => {
-//     try {
-//       const activityData = await AsyncStorage.getItem("completedActivities");
-//       const levelData = await AsyncStorage.getItem("anxietyLevel");
-//       const historyData = await AsyncStorage.getItem("anxietyHistory");
-
-//       const parsedActivities = activityData ? JSON.parse(activityData) : [];
-//       const parsedHistory = historyData ? JSON.parse(historyData) : [];
-
-//       setActivities(parsedActivities);
-//       setAnxietyLevel(levelData ?? "Not Tested");
-//       setHistory(parsedHistory);
-//     } catch (err) {
-//       console.log("Error loading data:", err);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadData();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   const today = getToday();
-//   const last7Days = getLast7Days();
-
-//   const dailyActivities = activities.filter((a) => a.date === today);
-//   const weeklyActivities = activities.filter((a) =>
-//     last7Days.includes(a.date)
-//   );
-
-//   const streak = new Set(activities.map((a) => a.date)).size;
-
-//   const renderItem = ({ item }) => (
-//     <View style={styles.activityCard}>
-//       <Text style={styles.activityTitle}>{item.title}</Text>
-//       <Text style={styles.activityType}>{item.type}</Text>
-//       <Text style={styles.activityDate}>{item.date}</Text>
-//     </View>
-//   );
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.header}>Mental Health Dashboard</Text>
-
-//       {/* Anxiety Level */}
-//       <View style={styles.levelCard}>
-//         <Text style={styles.levelTitle}>Your Anxiety Level</Text>
-//         <Text style={styles.levelValue}>{anxietyLevel}</Text>
-//       </View>
-
-//       {/* Progress Numbers */}
-//       <View style={styles.progressRow}>
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{dailyActivities.length}</Text>
-//           <Text style={styles.progressText}>Today</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{weeklyActivities.length}</Text>
-//           <Text style={styles.progressText}>Week</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{streak}</Text>
-//           <Text style={styles.progressText}>Streak</Text>
-//         </View>
-//       </View>
-
-//       {/* Anxiety Progress */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Anxiety Progress</Text>
-
-//         {history.length > 0 ? (
-//           history.slice(-5).map((item, index) => (
-//             <View key={index} style={styles.progressItem}>
-//               <Text style={styles.progressDate}>{item.date}</Text>
-//               <Text style={styles.progressLevel}>{item.level}</Text>
-//             </View>
-//           ))
-//         ) : (
-//           <Text style={styles.noActivity}>No previous records</Text>
-//         )}
-//       </View>
-
-//       {/* Today Activities */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Today's Activities</Text>
-
-//         {dailyActivities.length > 0 ? (
-//           <FlatList
-//             data={dailyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>
-//             No activities completed today
-//           </Text>
-//         )}
-//       </View>
-
-//       <TouchableOpacity
-//         style={styles.mainBtn}
-//         onPress={() => navigation.navigate("Activities")}
-//       >
-//         <Text style={styles.btnText}>Start Activities</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { padding: 20, backgroundColor: "#f3f6ff", flexGrow: 1 },
-
-//   header: {
-//     fontSize: 26,
-//     fontWeight: "700",
-//     color: "#1e3a8a",
-//     textAlign: "center",
-//     marginBottom: 20,
-//   },
-
-//   levelCard: {
-//     backgroundColor: "#4f46e5",
-//     padding: 20,
-//     borderRadius: 16,
-//     marginBottom: 20,
-//   },
-
-//   levelTitle: { color: "#c7d2fe", fontSize: 16 },
-
-//   levelValue: { color: "#fff", fontSize: 28, fontWeight: "bold" },
-
-//   progressRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginBottom: 20,
-//   },
-
-//   progressCard: {
-//     backgroundColor: "#fff",
-//     width: "30%",
-//     padding: 15,
-//     borderRadius: 14,
-//     alignItems: "center",
-//   },
-
-//   progressNumber: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     color: "#1e40af",
-//   },
-
-//   progressText: { color: "#6b7280" },
-
-//   summaryCard: {
-//     backgroundColor: "#fff",
-//     borderRadius: 16,
-//     padding: 16,
-//     marginBottom: 20,
-//   },
-
-//   summaryTitle: {
-//     fontSize: 18,
-//     fontWeight: "bold",
-//     marginBottom: 10,
-//   },
-
-//   progressItem: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingVertical: 6,
-//   },
-
-//   progressDate: { color: "#6b7280" },
-
-//   progressLevel: { fontWeight: "600", color: "#1e40af" },
-
-//   activityCard: {
-//     backgroundColor: "#eef2ff",
-//     padding: 12,
-//     borderRadius: 10,
-//     marginBottom: 8,
-//   },
-
-//   activityTitle: { fontWeight: "600" },
-
-//   activityType: { fontSize: 13, color: "#6b7280" },
-
-//   activityDate: { fontSize: 12, color: "#9ca3af" },
-
-//   noActivity: { fontStyle: "italic", color: "#9ca3af" },
-
-//   mainBtn: {
-//     backgroundColor: "#22c55e",
-//     padding: 14,
-//     borderRadius: 12,
-//     alignItems: "center",
-//   },
-
-//   btnText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-// });
-
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   FlatList,
-//   TouchableOpacity,
-//   ScrollView,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// const getToday = () => new Date().toISOString().split("T")[0];
-
-// const getLast7Days = () => {
-//   const dates = [];
-//   for (let i = 6; i >= 0; i--) {
-//     const d = new Date();
-//     d.setDate(d.getDate() - i);
-//     dates.push(d.toISOString().split("T")[0]);
-//   }
-//   return dates;
-// };
-
-// export default function DashboardScreen({ navigation }) {
-//   const [activities, setActivities] = useState([]);
-//   const [anxietyLevel, setAnxietyLevel] = useState("Unknown");
-//   const [history, setHistory] = useState([]);
-
-//   const loadData = async () => {
-//     try {
-//       const activityData = await AsyncStorage.getItem("completedActivities");
-//       const levelData = await AsyncStorage.getItem("anxietyLevel");
-//       const historyData = await AsyncStorage.getItem("anxietyHistory");
-
-//       const parsedActivities = activityData ? JSON.parse(activityData) : [];
-//       const parsedHistory = historyData ? JSON.parse(historyData) : [];
-
-//       setActivities(parsedActivities);
-//       setAnxietyLevel(levelData ?? "Not Tested");
-//       setHistory(parsedHistory);
-//     } catch (err) {
-//       console.log("Error loading data:", err);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadData();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   const today = getToday();
-//   const last7Days = getLast7Days();
-
-//   const dailyActivities = activities.filter((a) => a.date === today);
-//   const weeklyActivities = activities.filter((a) =>
-//     last7Days.includes(a.date)
-//   );
-
-//   const streak = new Set(activities.map((a) => a.date)).size;
-
-//   const renderItem = ({ item }) => (
-//     <View style={styles.activityCard}>
-//       <Text style={styles.activityTitle}>{item.title}</Text>
-//       <Text style={styles.activityType}>{item.type}</Text>
-//       <Text style={styles.activityDate}>{item.date}</Text>
-//     </View>
-//   );
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.header}>Mental Health Dashboard</Text>
-
-//       <View style={styles.levelCard}>
-//         <Text style={styles.levelTitle}>Your Anxiety Level</Text>
-//         <Text style={styles.levelValue}>{anxietyLevel}</Text>
-//       </View>
-
-//       <View style={styles.progressRow}>
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{dailyActivities.length}</Text>
-//           <Text style={styles.progressText}>Today</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{weeklyActivities.length}</Text>
-//           <Text style={styles.progressText}>Week</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{streak}</Text>
-//           <Text style={styles.progressText}>Streak</Text>
-//         </View>
-//       </View>
-
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Anxiety Progress</Text>
-
-//         {history.length > 0 ? (
-//           history.slice(-5).map((item, index) => (
-//             <View key={index} style={styles.progressItem}>
-//               <Text style={styles.progressDate}>{item.date}</Text>
-//               <Text style={styles.progressLevel}>{item.level}</Text>
-//             </View>
-//           ))
-//         ) : (
-//           <Text style={styles.noActivity}>No previous records</Text>
-//         )}
-//       </View>
-
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Today's Activities</Text>
-
-//         {dailyActivities.length > 0 ? (
-//           <FlatList
-//             data={dailyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>
-//             No activities completed today
-//           </Text>
-//         )}
-//       </View>
-
-//       {/* Start Activities */}
-//       <TouchableOpacity
-//         style={styles.mainBtn}
-//         onPress={() => navigation.navigate("Activities")}
-//       >
-//         <Text style={styles.btnText}>Start Activities</Text>
-//       </TouchableOpacity>
-
-//       {/* NEW BUTTON → RESULT SCREEN */}
-//       <TouchableOpacity
-//         style={styles.resultBtn}
-//         onPress={() => navigation.navigate("Result")}
-//       >
-//         <Text style={styles.btnText}>Go to Result Screen</Text>
-//       </TouchableOpacity>
-
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { padding: 20, backgroundColor: "#f3f6ff", flexGrow: 1 },
-
-//   header: {
-//     fontSize: 26,
-//     fontWeight: "700",
-//     color: "#1e3a8a",
-//     textAlign: "center",
-//     marginBottom: 20,
-//   },
-
-//   levelCard: {
-//     backgroundColor: "#4f46e5",
-//     padding: 20,
-//     borderRadius: 16,
-//     marginBottom: 20,
-//   },
-
-//   levelTitle: { color: "#c7d2fe", fontSize: 16 },
-
-//   levelValue: { color: "#fff", fontSize: 28, fontWeight: "bold" },
-
-//   progressRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginBottom: 20,
-//   },
-
-//   progressCard: {
-//     backgroundColor: "#fff",
-//     width: "30%",
-//     padding: 15,
-//     borderRadius: 14,
-//     alignItems: "center",
-//   },
-
-//   progressNumber: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     color: "#1e40af",
-//   },
-
-//   progressText: { color: "#6b7280" },
-
-//   summaryCard: {
-//     backgroundColor: "#fff",
-//     borderRadius: 16,
-//     padding: 16,
-//     marginBottom: 20,
-//   },
-
-//   summaryTitle: {
-//     fontSize: 18,
-//     fontWeight: "bold",
-//     marginBottom: 10,
-//   },
-
-//   progressItem: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingVertical: 6,
-//   },
-
-//   progressDate: { color: "#6b7280" },
-
-//   progressLevel: { fontWeight: "600", color: "#1e40af" },
-
-//   activityCard: {
-//     backgroundColor: "#eef2ff",
-//     padding: 12,
-//     borderRadius: 10,
-//     marginBottom: 8,
-//   },
-
-//   activityTitle: { fontWeight: "600" },
-
-//   activityType: { fontSize: 13, color: "#6b7280" },
-
-//   activityDate: { fontSize: 12, color: "#9ca3af" },
-
-//   noActivity: { fontStyle: "italic", color: "#9ca3af" },
-
-//   mainBtn: {
-//     backgroundColor: "#22c55e",
-//     padding: 14,
-//     borderRadius: 12,
-//     alignItems: "center",
-//     marginBottom: 10,
-//   },
-
-//   resultBtn: {
-//     backgroundColor: "#3b82f6",
-//     padding: 14,
-//     borderRadius: 12,
-//     alignItems: "center",
-//   },
-
-//   btnText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-// });
-
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   FlatList,
-//   TouchableOpacity,
-//   ScrollView,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// const getToday = () => new Date().toISOString().split("T")[0];
-
-// const getLast7Days = () => {
-//   const dates = [];
-//   for (let i = 6; i >= 0; i--) {
-//     const d = new Date();
-//     d.setDate(d.getDate() - i);
-//     dates.push(d.toISOString().split("T")[0]);
-//   }
-//   return dates;
-// };
-
-// export default function DashboardScreen({ navigation }) {
-//   const [activities, setActivities] = useState([]);
-//   const [anxietyLevel, setAnxietyLevel] = useState("Unknown");
-//   const [history, setHistory] = useState([]);
-
-//   const loadData = async () => {
-//     try {
-//       const activityData = await AsyncStorage.getItem("completedActivities");
-//       const levelData = await AsyncStorage.getItem("anxietyLevel");
-//       const historyData = await AsyncStorage.getItem("anxietyHistory");
-
-//       const parsedActivities = activityData ? JSON.parse(activityData) : [];
-//       const parsedHistory = historyData ? JSON.parse(historyData) : [];
-
-//       setActivities(parsedActivities);
-//       setAnxietyLevel(levelData ?? "Not Tested");
-//       setHistory(parsedHistory);
-//     } catch (err) {
-//       console.log("Error loading data:", err);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadData();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   const today = getToday();
-//   const last7Days = getLast7Days();
-
-//   const dailyActivities = activities.filter((a) => a.date === today);
-//   const weeklyActivities = activities.filter((a) =>
-//     last7Days.includes(a.date)
-//   );
-
-//   const streak = new Set(activities.map((a) => a.date)).size;
-
-//   const renderItem = ({ item }) => (
-//     <View style={styles.activityCard}>
-//       <Text style={styles.activityTitle}>{item.title}</Text>
-//       <Text style={styles.activityType}>{item.type}</Text>
-//       <Text style={styles.activityDate}>{item.date}</Text>
-//     </View>
-//   );
-
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <Text style={styles.header}>Mental Wellness Dashboard</Text>
-
-//       {/* Anxiety Level Card */}
-//       <View style={styles.levelCard}>
-//         <Text style={styles.levelTitle}>Your Anxiety Level</Text>
-//         <Text style={styles.levelValue}>{anxietyLevel}</Text>
-//       </View>
-
-//       {/* Progress Cards */}
-//       <View style={styles.progressRow}>
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{dailyActivities.length}</Text>
-//           <Text style={styles.progressText}>Today</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{weeklyActivities.length}</Text>
-//           <Text style={styles.progressText}>Week</Text>
-//         </View>
-
-//         <View style={styles.progressCard}>
-//           <Text style={styles.progressNumber}>{streak}</Text>
-//           <Text style={styles.progressText}>Streak</Text>
-//         </View>
-//       </View>
-
-//       {/* Anxiety Progress */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Anxiety Progress</Text>
-
-//         {history.length > 0 ? (
-//           history.slice(-5).map((item, index) => (
-//             <View key={index} style={styles.progressItem}>
-//               <Text style={styles.progressDate}>{item.date}</Text>
-//               <Text style={styles.progressLevel}>{item.level}</Text>
-//             </View>
-//           ))
-//         ) : (
-//           <Text style={styles.noActivity}>No previous records</Text>
-//         )}
-//       </View>
-
-//       {/* Today's Activities */}
-//       <View style={styles.summaryCard}>
-//         <Text style={styles.summaryTitle}>Today's Activities</Text>
-
-//         {dailyActivities.length > 0 ? (
-//           <FlatList
-//             data={dailyActivities}
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item.id + item.date}
-//           />
-//         ) : (
-//           <Text style={styles.noActivity}>
-//             No activities completed today
-//           </Text>
-//         )}
-//       </View>
-
-//       {/* Start Activities */}
-//       <TouchableOpacity
-//         style={styles.mainBtn}
-//         onPress={() => navigation.navigate("Activities")}
-//       >
-//         <Text style={styles.btnText}>Start Activities</Text>
-//       </TouchableOpacity>
-
-//       {/* Result Screen */}
-//       <TouchableOpacity
-//         style={styles.resultBtn}
-//         onPress={() => navigation.navigate("Result")}
-//       >
-//         <Text style={styles.btnText}>View Assessment Result</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     padding: 22,
-//     backgroundColor: "#FAF7FC",
-//     flexGrow: 1,
-//   },
-
-//   header: {
-//     fontSize: 24,
-//     fontWeight: "700",
-//     color: "#3F3F46",
-//     textAlign: "center",
-//     marginBottom: 22,
-//   },
-
-//   levelCard: {
-//     backgroundColor: "#F4E8FB",
-//     padding: 22,
-//     borderRadius: 18,
-//     marginBottom: 20,
-//     alignItems: "center",
-//     borderWidth: 1,
-//     borderColor: "#E7C6F7",
-//   },
-
-//   levelTitle: {
-//     color: "#6B7280",
-//     fontSize: 14,
-//   },
-
-//   levelValue: {
-//     color: "#8A2BE2",
-//     fontSize: 26,
-//     fontWeight: "700",
-//     marginTop: 6,
-//   },
-
-//   progressRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginBottom: 22,
-//   },
-
-//   progressCard: {
-//     backgroundColor: "#ffffff",
-//     width: "30%",
-//     padding: 16,
-//     borderRadius: 16,
-//     alignItems: "center",
-//     shadowColor: "#000",
-//     shadowOpacity: 0.05,
-//     shadowOffset: { width: 0, height: 4 },
-//     shadowRadius: 6,
-//     elevation: 3,
-//   },
-
-//   progressNumber: {
-//     fontSize: 24,
-//     fontWeight: "700",
-//     color: "#e339e9",
-//   },
-
-//   progressText: {
-//     color: "#6B7280",
-//     fontSize: 13,
-//     marginTop: 3,
-//   },
-
-//   summaryCard: {
-//     backgroundColor: "#ffffff",
-//     borderRadius: 18,
-//     padding: 18,
-//     marginBottom: 20,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.04,
-//     shadowOffset: { width: 0, height: 3 },
-//     shadowRadius: 5,
-//     elevation: 2,
-//   },
-
-//   summaryTitle: {
-//     fontSize: 17,
-//     fontWeight: "600",
-//     marginBottom: 10,
-//     color: "#374151",
-//   },
-
-//   progressItem: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingVertical: 6,
-//   },
-
-//   progressDate: {
-//     color: "#6B7280",
-//   },
-
-//   progressLevel: {
-//     fontWeight: "600",
-//     color: "#9333EA",
-//   },
-
-//   activityCard: {
-//     backgroundColor: "#F7F0FB",
-//     padding: 12,
-//     borderRadius: 12,
-//     marginBottom: 8,
-//   },
-
-//   activityTitle: {
-//     fontWeight: "600",
-//     color: "#374151",
-//   },
-
-//   activityType: {
-//     fontSize: 13,
-//     color: "#6B7280",
-//   },
-
-//   activityDate: {
-//     fontSize: 12,
-//     color: "#9CA3AF",
-//   },
-
-//   noActivity: {
-//     fontStyle: "italic",
-//     color: "#9CA3AF",
-//   },
-
-//   mainBtn: {
-//     backgroundColor: "#e339e9",
-//     padding: 14,
-//     borderRadius: 14,
-//     alignItems: "center",
-//     marginBottom: 10,
-//   },
-
-//   resultBtn: {
-//     backgroundColor: "#B66CF2",
-//     padding: 14,
-//     borderRadius: 14,
-//     alignItems: "center",
-//   },
-
-//   btnText: {
-//     color: "#fff",
-//     fontWeight: "600",
-//     fontSize: 15,
-//   },
-// });
-
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ScrollView,
+View,
+Text,
+StyleSheet,
+FlatList,
+TouchableOpacity,
+ScrollView,
+Dimensions,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const getToday = () => new Date().toISOString().split("T")[0];
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LineChart } from "react-native-chart-kit";
+
+/* LOCAL DATE FIX */
+const getToday = () => {
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, "0");
+const day = String(today.getDate()).padStart(2, "0");
+return `${year}-${month}-${day}`;
+};
+
+const screenWidth = Dimensions.get("window").width;
 
 export default function DashboardScreen({ navigation }) {
-  const [activities, setActivities] = useState([]);
-  const [anxietyLevel, setAnxietyLevel] = useState("Unknown");
-  const [history, setHistory] = useState([]);
-  const [weekNumber, setWeekNumber] = useState(1);
 
-  const loadData = async () => {
-    try {
-      const activityData = await AsyncStorage.getItem("completedActivities");
-      const levelData = await AsyncStorage.getItem("anxietyLevel");
-      const historyData = await AsyncStorage.getItem("anxietyHistory");
-      const startDateData = await AsyncStorage.getItem("weekStartDate");
+const [activities, setActivities] = useState([]);
+const [anxietyLevel, setAnxietyLevel] = useState("Unknown");
+const [history, setHistory] = useState([]);
+const [weekNumber, setWeekNumber] = useState(1);
+const [lastAssessmentDate, setLastAssessmentDate] = useState(null);
 
-      const parsedActivities = activityData ? JSON.parse(activityData) : [];
-      const parsedHistory = historyData ? JSON.parse(historyData) : [];
+const [trendMessage, setTrendMessage] = useState("");
+const [activityInsight, setActivityInsight] = useState("");
+const [wellnessScore, setWellnessScore] = useState(0);
 
-      // Set start date if not already
-      let startDate = startDateData;
-      if (!startDate && parsedActivities.length > 0) {
-        startDate = parsedActivities[0].date;
-        await AsyncStorage.setItem("weekStartDate", startDate);
-      }
+const loadData = async () => {
 
-      // Calculate current week
-      let week = 1;
-      if (startDate) {
-        const start = new Date(startDate);
-        const today = new Date(getToday());
-        const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-        week = Math.floor(diffDays / 7) + 1;
-      }
+try {
 
-      setActivities(parsedActivities);
-      setAnxietyLevel(levelData ?? "Not Tested");
-      setHistory(parsedHistory);
-      setWeekNumber(week);
-    } catch (err) {
-      console.log("Error loading data:", err);
-    }
-  };
+const activityData = await AsyncStorage.getItem("completedActivities");
+const levelData = await AsyncStorage.getItem("anxietyLevel");
+const historyData = await AsyncStorage.getItem("anxietyHistory");
+const startDateData = await AsyncStorage.getItem("weekStartDate");
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      loadData();
-    });
-    return unsubscribe;
-  }, [navigation]);
+const parsedActivities = activityData ? JSON.parse(activityData) : [];
+const parsedHistory = historyData ? JSON.parse(historyData) : [];
 
-  const today = getToday();
-
-  const dailyActivities = activities.filter((a) => a.date === today);
-  const streak = new Set(activities.map((a) => a.date)).size;
-
-  const renderItem = ({ item }) => (
-    <View style={styles.activityCard}>
-      <Text style={styles.activityTitle}>{item.title}</Text>
-      <Text style={styles.activityType}>{item.type}</Text>
-      <Text style={styles.activityDate}>{item.date}</Text>
-    </View>
-  );
-
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Mental Wellness Dashboard</Text>
-
-      {/* Anxiety Level Card */}
-      <View style={styles.levelCard}>
-        <Text style={styles.levelTitle}>Your Anxiety Level</Text>
-        <Text style={styles.levelValue}>{anxietyLevel}</Text>
-      </View>
-
-      {/* Progress Cards */}
-      <View style={styles.progressRow}>
-        <View style={styles.progressCard}>
-          <Text style={styles.progressNumber}>{dailyActivities.length}</Text>
-          <Text style={styles.progressText}>Today</Text>
-        </View>
-
-        <View style={styles.progressCard}>
-          <Text style={styles.progressNumber}>{weekNumber}</Text>
-          <Text style={styles.progressText}>Week</Text>
-        </View>
-
-        <View style={styles.progressCard}>
-          <Text style={styles.progressNumber}>{streak}</Text>
-          <Text style={styles.progressText}>Streak</Text>
-        </View>
-      </View>
-
-      {/* Anxiety Progress */}
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Anxiety Progress</Text>
-
-        {history.length > 0 ? (
-          history.slice(-5).map((item, index) => (
-            <View key={index} style={styles.progressItem}>
-              <Text style={styles.progressDate}>{item.date}</Text>
-              <Text style={styles.progressLevel}>{item.level}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.noActivity}>No previous records</Text>
-        )}
-      </View>
-
-      {/* Today's Activities */}
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Today's Activities</Text>
-
-        {dailyActivities.length > 0 ? (
-          <FlatList
-            data={dailyActivities}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id + item.date}
-          />
-        ) : (
-          <Text style={styles.noActivity}>
-            No activities completed today
-          </Text>
-        )}
-      </View>
-
-      {/* Start Activities */}
-      <TouchableOpacity
-        style={styles.mainBtn}
-        onPress={() => navigation.navigate("Activities")}
-      >
-        <Text style={styles.btnText}>Start Activities</Text>
-      </TouchableOpacity>
-
-      {/* Result Screen */}
-      <TouchableOpacity
-        style={styles.resultBtn}
-        onPress={() => navigation.navigate("Result")}
-      >
-        <Text style={styles.btnText}>View Assessment Result</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
+if (parsedHistory.length > 0) {
+const last = parsedHistory[parsedHistory.length - 1];
+setLastAssessmentDate(last.date);
 }
 
-// --- Styles (same as your original) ---
+/* Week Calculation */
+
+let startDate = startDateData;
+
+if (!startDate && parsedActivities.length > 0) {
+startDate = parsedActivities[0].date;
+await AsyncStorage.setItem("weekStartDate", startDate);
+}
+
+let week = 1;
+
+if (startDate) {
+
+const start = new Date(startDate);
+const today = new Date(getToday());
+
+const diffDays = Math.floor(
+(today - start) / (1000 * 60 * 60 * 24)
+);
+
+week = Math.floor(diffDays / 7) + 1;
+
+}
+
+setActivities(parsedActivities);
+setAnxietyLevel(levelData ?? "Not Tested");
+setHistory(parsedHistory);
+setWeekNumber(week);
+
+/* Trend Insight */
+
+const levelMap = {
+"Minimal Anxiety": 1,
+"Mild Anxiety": 2,
+"Moderate Anxiety": 3,
+"Severe Anxiety": 4,
+};
+
+if (parsedHistory.length >= 2) {
+
+const last = levelMap[parsedHistory[parsedHistory.length - 1].level];
+const previous = levelMap[parsedHistory[parsedHistory.length - 2].level];
+
+if (last < previous) {
+setTrendMessage("Your anxiety improved since the last assessment");
+}
+else if (last > previous) {
+setTrendMessage("Your anxiety increased slightly since the last assessment");
+}
+else {
+setTrendMessage("Your anxiety level is stable");
+}
+
+}
+
+/* Activity Insight */
+
+if (parsedActivities.length >= 3) {
+
+const activeDays = new Set(parsedActivities.map(a => a.date)).size;
+
+if (activeDays >= 3) {
+setActivityInsight("Regular activities are helping maintain your mental wellness.");
+}
+else {
+setActivityInsight("Try completing activities regularly to improve mental wellbeing.");
+}
+
+}
+
+/* Wellness Score */
+
+let score = 50;
+
+const streak = new Set(parsedActivities.map(a => a.date)).size;
+
+score += streak * 3;
+
+if (levelData === "Minimal Anxiety") score += 25;
+if (levelData === "Mild Anxiety") score += 10;
+if (levelData === "Moderate Anxiety") score -= 10;
+if (levelData === "Severe Anxiety") score -= 20;
+
+score = Math.max(0, Math.min(100, score));
+
+setWellnessScore(score);
+
+} catch (err) {
+console.log("Error loading data:", err);
+}
+
+};
+
+useEffect(() => {
+
+const unsubscribe = navigation.addListener("focus", () => {
+loadData();
+});
+
+return unsubscribe;
+
+}, [navigation]);
+
+const today = getToday();
+
+const dailyActivities = activities.filter((a) => a.date === today);
+const streak = new Set(activities.map((a) => a.date)).size;
+
+const renderItem = ({ item }) => (
+<View style={styles.activityCard}>
+<Text style={styles.activityTitle}>{item.title}</Text>
+<Text style={styles.activityType}>{item.type}</Text>
+<Text style={styles.activityDate}>{item.date}</Text>
+</View>
+);
+
+/* Chart Data */
+
+const levelMap = {
+"Minimal Anxiety": 1,
+"Mild Anxiety": 2,
+"Moderate Anxiety": 3,
+"Severe Anxiety": 4,
+};
+
+const chartLabels = history.map((item) => item.date.slice(5));
+const chartValues = history.map((item) => levelMap[item.level] || 0);
+
+return (
+
+<ScrollView contentContainerStyle={styles.container}>
+
+<Text style={styles.header}>Mental Wellness Dashboard</Text>
+
+{/* Wellness Score */}
+
+<View style={styles.scoreCard}>
+<Text style={styles.scoreTitle}>Mental Wellness Score</Text>
+<Text style={styles.scoreValue}>{wellnessScore}/100</Text>
+</View>
+
+{/* Anxiety Level */}
+
+<View style={styles.levelCard}>
+
+<Text style={styles.levelTitle}>Your Anxiety Level</Text>
+
+<Text style={styles.levelValue}>{anxietyLevel}</Text>
+
+{lastAssessmentDate && (
+<Text style={styles.lastAssessment}>
+Last assessment: {lastAssessmentDate}
+</Text>
+)}
+
+</View>
+
+{/* Progress Cards */}
+
+<View style={styles.progressRow}>
+
+<View style={styles.progressCard}>
+<Text style={styles.progressNumber}>{dailyActivities.length}</Text>
+<Text style={styles.progressText}>Today</Text>
+</View>
+
+<View style={styles.progressCard}>
+<Text style={styles.progressNumber}>{weekNumber}</Text>
+<Text style={styles.progressText}>Week</Text>
+</View>
+
+<View style={styles.progressCard}>
+<Text style={styles.progressNumber}>{streak}</Text>
+<Text style={styles.progressText}>Streak</Text>
+</View>
+
+</View>
+
+{/* Scrollable Anxiety Trend Chart */}
+
+{chartValues.length > 0 && (
+
+<View style={styles.summaryCard}>
+
+<Text style={styles.summaryTitle}>Anxiety Trend</Text>
+
+<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+
+<LineChart
+data={{
+labels: chartLabels,
+datasets: [{ data: chartValues }],
+}}
+
+width={Math.max(screenWidth - 40, chartLabels.length * 70)}
+
+height={200}
+
+chartConfig={{
+backgroundGradientFrom: "#ffffff",
+backgroundGradientTo: "#ffffff",
+decimalPlaces: 0,
+color: () => "#9333EA",
+labelColor: () => "#6B7280",
+propsForDots: {
+r: "4",
+strokeWidth: "2",
+stroke: "#9333EA",
+},
+}}
+
+bezier
+
+style={{
+marginTop: 10,
+borderRadius: 16,
+}}
+
+/>
+
+</ScrollView>
+
+<Text style={styles.swipeText}>
+Swipe to view full trend →
+</Text>
+
+</View>
+
+)}
+
+{/* Trend Insight */}
+
+{trendMessage !== "" && (
+<View style={styles.trendCard}>
+<Text style={styles.trendText}>{trendMessage}</Text>
+</View>
+)}
+
+{/* Activity Insight */}
+
+{activityInsight !== "" && (
+<View style={styles.insightCard}>
+<Text style={styles.insightText}>{activityInsight}</Text>
+</View>
+)}
+
+{/* Anxiety Progress */}
+
+<View style={styles.summaryCard}>
+
+<Text style={styles.summaryTitle}>Anxiety Progress</Text>
+
+{history.length > 0 ? (
+
+history.slice(-5).map((item, index) => (
+<View key={index} style={styles.progressItem}>
+<Text style={styles.progressDate}>{item.date}</Text>
+<Text style={styles.progressLevel}>{item.level}</Text>
+</View>
+))
+
+) : (
+
+<Text style={styles.noActivity}>No previous records</Text>
+
+)}
+
+</View>
+
+{/* Today's Activities */}
+
+<View style={styles.summaryCard}>
+
+<Text style={styles.summaryTitle}>Today's Activities</Text>
+
+{dailyActivities.length > 0 ? (
+
+<FlatList
+data={dailyActivities}
+renderItem={renderItem}
+keyExtractor={(item) => item.id + item.date}
+/>
+
+) : (
+
+<Text style={styles.noActivity}>
+No activities completed today
+</Text>
+
+)}
+
+</View>
+
+<TouchableOpacity
+style={styles.mainBtn}
+onPress={() => navigation.navigate("Activities")}
+>
+<Text style={styles.btnText}>Start Activities</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+style={styles.resultBtn}
+onPress={() => navigation.navigate("Result")}
+>
+<Text style={styles.btnText}>View Assessment Result</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+style={styles.reassessBtn}
+onPress={() => navigation.navigate("Voice")}
+>
+<Text style={styles.btnText}>Reassess Anxiety</Text>
+</TouchableOpacity>
+
+</ScrollView>
+
+);
+
+}
+
 const styles = StyleSheet.create({
-  container: { padding: 22, backgroundColor: "#FAF7FC", flexGrow: 1 },
-  header: { fontSize: 24, fontWeight: "700", color: "#3F3F46", textAlign: "center", marginBottom: 22 },
-  levelCard: { backgroundColor: "#F4E8FB", padding: 22, borderRadius: 18, marginBottom: 20, alignItems: "center", borderWidth: 1, borderColor: "#E7C6F7" },
-  levelTitle: { color: "#6B7280", fontSize: 14 },
-  levelValue: { color: "#8A2BE2", fontSize: 26, fontWeight: "700", marginTop: 6 },
-  progressRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 22 },
-  progressCard: { backgroundColor: "#ffffff", width: "30%", padding: 16, borderRadius: 16, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.05, shadowOffset: { width: 0, height: 4 }, shadowRadius: 6, elevation: 3 },
-  progressNumber: { fontSize: 24, fontWeight: "700", color: "#e339e9" },
-  progressText: { color: "#6B7280", fontSize: 13, marginTop: 3 },
-  summaryCard: { backgroundColor: "#ffffff", borderRadius: 18, padding: 18, marginBottom: 20, shadowColor: "#000", shadowOpacity: 0.04, shadowOffset: { width: 0, height: 3 }, shadowRadius: 5, elevation: 2 },
-  summaryTitle: { fontSize: 17, fontWeight: "600", marginBottom: 10, color: "#374151" },
-  progressItem: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
-  progressDate: { color: "#6B7280" },
-  progressLevel: { fontWeight: "600", color: "#9333EA" },
-  activityCard: { backgroundColor: "#F7F0FB", padding: 12, borderRadius: 12, marginBottom: 8 },
-  activityTitle: { fontWeight: "600", color: "#374151" },
-  activityType: { fontSize: 13, color: "#6B7280" },
-  activityDate: { fontSize: 12, color: "#9CA3AF" },
-  noActivity: { fontStyle: "italic", color: "#9CA3AF" },
-  mainBtn: { backgroundColor: "#e339e9", padding: 14, borderRadius: 14, alignItems: "center", marginBottom: 10 },
-  resultBtn: { backgroundColor: "#B66CF2", padding: 14, borderRadius: 14, alignItems: "center" },
-  btnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+
+container:{padding:22,backgroundColor:"#FAF7FC",flexGrow:1},
+
+header:{fontSize:24,fontWeight:"700",color:"#3F3F46",textAlign:"center",marginBottom:22},
+
+scoreCard:{backgroundColor:"#EEF2FF",padding:20,borderRadius:18,alignItems:"center",marginBottom:20},
+
+scoreTitle:{fontSize:14,color:"#6B7280"},
+
+scoreValue:{fontSize:28,fontWeight:"700",color:"#4F46E5",marginTop:6},
+
+levelCard:{backgroundColor:"#F4E8FB",padding:22,borderRadius:18,marginBottom:20,alignItems:"center"},
+
+levelTitle:{color:"#6B7280",fontSize:14},
+
+levelValue:{color:"#8A2BE2",fontSize:26,fontWeight:"700",marginTop:6},
+
+lastAssessment:{marginTop:6,fontSize:12,color:"#6B7280"},
+
+progressRow:{flexDirection:"row",justifyContent:"space-between",marginBottom:22},
+
+progressCard:{backgroundColor:"#fff",width:"30%",padding:16,borderRadius:16,alignItems:"center",elevation:3},
+
+progressNumber:{fontSize:24,fontWeight:"700",color:"#e339e9"},
+
+progressText:{color:"#6B7280",fontSize:13,marginTop:3},
+
+summaryCard:{backgroundColor:"#fff",borderRadius:18,padding:16,marginBottom:20,elevation:3},
+
+summaryTitle:{fontSize:17,fontWeight:"600",marginBottom:10,color:"#374151"},
+
+swipeText:{fontSize:12,color:"#9CA3AF",marginTop:6,textAlign:"right"},
+
+trendCard:{backgroundColor:"#EEF2FF",padding:14,borderRadius:14,marginBottom:16,alignItems:"center"},
+
+trendText:{fontSize:14,fontWeight:"600",color:"#4F46E5"},
+
+insightCard:{backgroundColor:"#ECFDF5",padding:14,borderRadius:14,marginBottom:18,alignItems:"center"},
+
+insightText:{fontSize:14,fontWeight:"600",color:"#059669"},
+
+progressItem:{flexDirection:"row",justifyContent:"space-between",paddingVertical:6},
+
+progressDate:{color:"#6B7280"},
+
+progressLevel:{fontWeight:"600",color:"#9333EA"},
+
+activityCard:{backgroundColor:"#F7F0FB",padding:12,borderRadius:12,marginBottom:8},
+
+activityTitle:{fontWeight:"600",color:"#374151"},
+
+activityType:{fontSize:13,color:"#6B7280"},
+
+activityDate:{fontSize:12,color:"#9CA3AF"},
+
+noActivity:{fontStyle:"italic",color:"#9CA3AF"},
+
+mainBtn:{backgroundColor:"#e339e9",padding:14,borderRadius:14,alignItems:"center",marginBottom:10},
+
+resultBtn:{backgroundColor:"#B66CF2",padding:14,borderRadius:14,alignItems:"center",marginBottom:10},
+
+reassessBtn:{backgroundColor:"#6B7280",padding:14,borderRadius:14,alignItems:"center"},
+
+btnText:{color:"#fff",fontWeight:"600",fontSize:15}
+
 });

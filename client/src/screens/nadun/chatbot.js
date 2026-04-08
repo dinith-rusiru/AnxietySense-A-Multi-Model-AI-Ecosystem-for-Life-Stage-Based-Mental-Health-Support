@@ -366,7 +366,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // Added for back button
 
-const API_URL = 'http://127.0.0.1:8000'; // For Android emulator use http://10.0.2.2:8000
+const API_URL = 'http://127.0.0.1:8002'; // For Android emulator use http://10.0.2.2:8000
 
 export default function Chatbot() {
   const navigation = useNavigation();

@@ -1,115 +1,41 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { analyzeDrawing } from '../../services/dinth/anxietyService';
+import { predictDrawing } from '../../services/dinth/anxietyService';
 
 const COLORS = [
-  { hex:'#FF4444', name:'Red'    },
-  { hex:'#FF8C00', name:'Orange' },
-  { hex:'#FFD700', name:'Yellow' },
-  { hex:'#FF69B4', name:'Pink'   },
-  { hex:'#4CAF50', name:'Green'  },
-  { hex:'#2196F3', name:'Blue'   },
-  { hex:'#9C27B0', name:'Purple' },
-  { hex:'#795548', name:'Brown'  },
-  { hex:'#607D8B', name:'Gray'   },
-  { hex:'#212121', name:'Black'  },
+  { hex: '#FF4444', name: 'Red'    },
+  { hex: '#FF8C00', name: 'Orange' },
+  { hex: '#FFD700', name: 'Yellow' },
+  { hex: '#FF69B4', name: 'Pink'   },
+  { hex: '#4CAF50', name: 'Green'  },
+  { hex: '#2196F3', name: 'Blue'   },
+  { hex: '#9C27B0', name: 'Purple' },
+  { hex: '#00BCD4', name: 'Cyan'   },
+  { hex: '#795548', name: 'Brown'  },
+  { hex: '#607D8B', name: 'Gray'   },
+  { hex: '#212121', name: 'Black'  },
 ];
 
 const BRUSH_SIZES = [
-  { size:6,  label:'S' },
-  { size:12, label:'M' },
-  { size:20, label:'L' },
+  { size: 5,  label: 'S' },
+  { size: 12, label: 'M' },
+  { size: 22, label: 'L' },
 ];
 
-// ── Zones matching simple house layout ───────────────────────
-const ZONES = {
-  sky         : { points:[[0,0],[500,0],[500,175],[0,175]]           },
-  roof        : { points:[[90,177],[250,65],[410,177]]               },
-  wall        : { points:[[110,175],[390,175],[390,340],[110,340]]   },
-  door        : { points:[[210,265],[290,265],[290,340],[210,340]]   },
-  window_left : { points:[[130,200],[195,200],[195,258],[130,258]]   },
-  window_right: { points:[[305,200],[370,200],[370,258],[305,258]]   },
-  ground      : { points:[[0,340],[500,340],[500,420],[0,420]]       },
-};
-
-function pointInPoly(px, py, poly) {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [xi, yi] = poly[i], [xj, yj] = poly[j];
-    if (yi > py !== yj > py && px < ((xj-xi)*(py-yi))/(yj-yi)+xi)
-      inside = !inside;
-  }
-  return inside;
-}
-
-function getZone(x, y) {
-  for (const [id, z] of Object.entries(ZONES))
-    if (pointInPoly(x, y, z.points)) return id;
-  return null;
-}
-
+// Behavioral tracking helpers
 function colorDarkness(hex) {
-  const r=parseInt(hex.slice(1,3),16);
-  const g=parseInt(hex.slice(3,5),16);
-  const b=parseInt(hex.slice(5,7),16);
-  return 1 - (r*299 + g*587 + b*114) / 1000 / 255;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return 1 - (r * 299 + g * 587 + b * 114) / 1000 / 255;
 }
 
-// ── Draw clean simple house outline ──────────────────────────
-function drawHouse(ctx) {
-  ctx.clearRect(0, 0, 500, 420);
-
-  // Pure white background
+function drawBlankCanvas(ctx) {
+  ctx.clearRect(0, 0, 500, 430);
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, 500, 420);
-
-  // All lines same style
-  ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth   = 3;
-  ctx.lineJoin    = 'round';
-  ctx.lineCap     = 'round';
-
-  // ── Ground line ───────────────────────────────────────────
-  ctx.beginPath();
-  ctx.moveTo(40, 340);
-  ctx.lineTo(460, 340);
-  ctx.stroke();
-
-  // ── Walls ─────────────────────────────────────────────────
-  ctx.strokeRect(110, 175, 280, 165);
-
-  // ── Roof ──────────────────────────────────────────────────
-  ctx.beginPath();
-  ctx.moveTo(90,  177);
-  ctx.lineTo(250, 65);
-  ctx.lineTo(410, 177);
-  ctx.closePath();
-  ctx.stroke();
-
-  // ── Door ──────────────────────────────────────────────────
-  ctx.strokeRect(210, 265, 80, 75);
-
-  // ── Door knob ─────────────────────────────────────────────
-  ctx.beginPath();
-  ctx.arc(283, 305, 4, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // ── Left window ───────────────────────────────────────────
-  ctx.strokeRect(130, 200, 65, 58);
-  ctx.beginPath();
-  ctx.moveTo(162, 200); ctx.lineTo(162, 258);
-  ctx.moveTo(130, 229); ctx.lineTo(195, 229);
-  ctx.stroke();
-
-  // ── Right window ──────────────────────────────────────────
-  ctx.strokeRect(305, 200, 65, 58);
-  ctx.beginPath();
-  ctx.moveTo(337, 200); ctx.lineTo(337, 258);
-  ctx.moveTo(305, 229); ctx.lineTo(370, 229);
-  ctx.stroke();
+  ctx.fillRect(0, 0, 500, 430);
 }
 
-// ═════════════════════════════════════════════════════════════
 export default function DrawingScreen({ navigation, route }) {
   const { cameraResult, cameraImageUri } = route.params;
 
@@ -118,35 +44,43 @@ export default function DrawingScreen({ navigation, route }) {
   const lastPos         = useRef(null);
   const strokeCount     = useRef(0);
   const colorUsage      = useRef({});
-  const zoneStrokes     = useRef({});
-  const zoneDarkness    = useRef({});
-  const crossings       = useRef(0);
   const pauses          = useRef([]);
   const paintedPixels   = useRef({});
   const overpaintPixels = useRef(0);
   const lastStrokeTime  = useRef(Date.now());
   const sessionStart    = useRef(Date.now());
 
-  const [color,    setColor]    = useState('#FF4444');
+  const [color,    setColor]    = useState('#212121');
   const [brush,    setBrush]    = useState(12);
   const [isEraser, setIsEraser] = useState(false);
   const [loading,  setLoading]  = useState(false);
+  const [mode,     setMode]     = useState('draw');
+  const [uploadPreview, setUploadPreview] = useState(null);
 
   useEffect(() => {
     if (canvasRef.current) {
-      drawHouse(canvasRef.current.getContext('2d'));
-      sessionStart.current   = Date.now();
-      lastStrokeTime.current = Date.now();
+      drawBlankCanvas(canvasRef.current.getContext('2d'));
+      resetTracking();
     }
   }, []);
 
+  const resetTracking = () => {
+    strokeCount.current     = 0;
+    colorUsage.current      = {};
+    pauses.current          = [];
+    paintedPixels.current   = {};
+    overpaintPixels.current = 0;
+    sessionStart.current    = Date.now();
+    lastStrokeTime.current  = Date.now();
+  };
+
   const getPos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
-    const sx   = canvas.width  / rect.width;
-    const sy   = canvas.height / rect.height;
-    const cx   = e.touches ? e.touches[0].clientX : e.clientX;
-    const cy   = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x:(cx - rect.left)*sx, y:(cy - rect.top)*sy };
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (cx - rect.left) * sx, y: (cy - rect.top) * sy };
   };
 
   const startDraw = useCallback((e) => {
@@ -166,10 +100,8 @@ export default function DrawingScreen({ navigation, route }) {
     const pos    = getPos(e, canvas);
     const c      = isEraser ? '#FFFFFF' : color;
 
-    ctx.strokeStyle = c;
-    ctx.lineWidth   = brush;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
+    ctx.strokeStyle = c; ctx.lineWidth = brush;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(pos.x, pos.y);
@@ -179,25 +111,10 @@ export default function DrawingScreen({ navigation, route }) {
       strokeCount.current++;
       const dark = colorDarkness(color);
       colorUsage.current[color] = (colorUsage.current[color] || 0) + 1;
-
-      const zone = getZone(pos.x, pos.y);
-      const prev = getZone(lastPos.current.x, lastPos.current.y);
-
-      if (zone) {
-        zoneStrokes.current[zone] = (zoneStrokes.current[zone] || 0) + 1;
-        if (!zoneDarkness.current[zone])
-          zoneDarkness.current[zone] = { total:0, count:0 };
-        zoneDarkness.current[zone].total += dark;
-        zoneDarkness.current[zone].count++;
-      }
-
-      if (prev && zone && prev !== zone) crossings.current++;
-
-      const pk = `${Math.floor(pos.x/4)}_${Math.floor(pos.y/4)}`;
+      const pk = `${Math.floor(pos.x / 4)}_${Math.floor(pos.y / 4)}`;
       paintedPixels.current[pk] = (paintedPixels.current[pk] || 0) + 1;
       if (paintedPixels.current[pk] > 3) overpaintPixels.current++;
     }
-
     lastPos.current = pos;
   }, [color, brush, isEraser]);
 
@@ -207,43 +124,55 @@ export default function DrawingScreen({ navigation, route }) {
   }, []);
 
   const resetCanvas = () => {
-    strokeCount.current     = 0;
-    colorUsage.current      = {};
-    zoneStrokes.current     = {};
-    zoneDarkness.current    = {};
-    crossings.current       = 0;
-    pauses.current          = [];
-    paintedPixels.current   = {};
-    overpaintPixels.current = 0;
-    sessionStart.current    = Date.now();
-    drawHouse(canvasRef.current.getContext('2d'));
+    drawBlankCanvas(canvasRef.current.getContext('2d'));
+    resetTracking();
+  };
+
+  const handleUpload = () => {
+    const input  = document.createElement('input');
+    input.type   = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => setUploadPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    };
+    input.click();
   };
 
   const finishDrawing = async () => {
     setLoading(true);
     try {
+      let imageDataUrl;
+
+      if (mode === 'upload') {
+        if (!uploadPreview) { alert('Please upload a drawing first.'); setLoading(false); return; }
+        imageDataUrl = uploadPreview;
+      } else {
+        imageDataUrl = canvasRef.current.toDataURL('image/png');
+      }
+
+      const modelResult = await predictDrawing(imageDataUrl);
+
       const metrics = {
         totalStrokes   : strokeCount.current,
         colorUsage     : { ...colorUsage.current },
-        zoneStrokes    : { ...zoneStrokes.current },
-        zoneDarkness   : JSON.parse(JSON.stringify(zoneDarkness.current)),
-        crossings      : crossings.current,
         pauses         : [...pauses.current],
         overpaintPixels: overpaintPixels.current,
         duration       : Date.now() - sessionStart.current,
+        mode,
       };
 
-      const drawingImageUri = canvasRef.current.toDataURL('image/png');
-      const data = await analyzeDrawing(metrics, cameraResult.anxiety_score);
-
-      navigation.navigate('FinalResultScreen', {
+      navigation.navigate('DrawingResultScreen', {
         cameraResult,
-        drawingResult  : data,
         cameraImageUri,
-        drawingImageUri,
+        drawingImageUri    : imageDataUrl,
+        drawingModelResult : modelResult.data,
+        drawingMetrics     : metrics,
       });
     } catch (e) {
-      alert('Error: ' + e.message);
+      alert('Error analyzing drawing: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -251,73 +180,87 @@ export default function DrawingScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.title}>🎨 Color the House</Text>
-      <Text style={styles.subtitle}>Step 3 of 3 — Color any way you like!</Text>
+      <Text style={styles.title}>🎨 Drawing Analysis</Text>
+      <Text style={styles.subtitle}>Step 3 of 3 — Draw your family</Text>
 
-      {/* Canvas */}
-      <View style={styles.canvasBox}>
-        <canvas
-          ref={canvasRef}
-          width={500}
-          height={420}
-          style={{
-            width     : '100%',
-            height    : '100%',
-            cursor    : isEraser ? 'cell' : 'crosshair',
-            touchAction: 'none',
-            display   : 'block',
-          }}
-          onMouseDown={startDraw}
-          onMouseMove={draw}
-          onMouseUp={stopDraw}
-          onMouseLeave={stopDraw}
-          onTouchStart={startDraw}
-          onTouchMove={draw}
-          onTouchEnd={stopDraw}
-        />
+      {/* Instruction card */}
+      <View style={styles.instructionCard}>
+        <Text style={styles.instructionIcon}>👨‍👩‍👧‍👦</Text>
+        <Text style={styles.instructionText}>
+          Please draw a picture of <Text style={styles.instructionBold}>your family</Text>.
+          Include every member — take your time and use any colors you like.
+        </Text>
       </View>
 
-      {/* Color palette */}
-      <View style={styles.palette}>
-        {COLORS.map(c => (
-          <TouchableOpacity
-            key={c.hex}
-            onPress={() => { setColor(c.hex); setIsEraser(false); }}
-            style={[
-              styles.colorBtn,
-              { backgroundColor: c.hex },
-              color === c.hex && !isEraser && styles.colorSelected,
-            ]}
-          />
-        ))}
+      {/* Mode toggle */}
+      <View style={styles.modeRow}>
         <TouchableOpacity
-          onPress={() => setIsEraser(!isEraser)}
-          style={[styles.eraserBtn, isEraser && styles.eraserActive]}
-        >
-          <Text style={{ fontSize:18 }}>🧹</Text>
+          style={[styles.modeBtn, mode === 'draw' && styles.modeBtnActive]}
+          onPress={() => { setMode('draw'); setUploadPreview(null); }}>
+          <Text style={[styles.modeTxt, mode === 'draw' && { color: '#fff' }]}>✏️ Draw</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === 'upload' && styles.modeBtnActive]}
+          onPress={() => setMode('upload')}>
+          <Text style={[styles.modeTxt, mode === 'upload' && { color: '#fff' }]}>🖼️ Upload</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Brush sizes */}
-      <View style={styles.brushRow}>
-        <Text style={styles.brushLabel}>Size:</Text>
-        {BRUSH_SIZES.map(b => (
-          <TouchableOpacity
-            key={b.size}
-            onPress={() => setBrush(b.size)}
-            style={[
-              styles.brushBtn,
-              { width: b.size+24, height: b.size+24, borderRadius: (b.size+24)/2 },
-              brush === b.size && { backgroundColor: isEraser ? '#555' : color, borderColor:'#fff' },
-            ]}
-          >
-            <Text style={[styles.brushText, brush === b.size && { color:'#fff' }]}>
-              {b.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Canvas or Upload */}
+      <View style={styles.canvasBox}>
+        {mode === 'draw' ? (
+          <canvas
+            ref={canvasRef}
+            width={500} height={430}
+            style={{ width: '100%', height: '100%', cursor: isEraser ? 'cell' : 'crosshair', touchAction: 'none', display: 'block' }}
+            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
+            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={stopDraw}
+          />
+        ) : (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f3460', flexDirection: 'column', gap: 12 }}>
+            {uploadPreview ? (
+              <img src={uploadPreview} alt='drawing' style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8 }} />
+            ) : (
+              <>
+                <span style={{ fontSize: 48 }}>🖼️</span>
+                <span style={{ color: '#aaa', fontSize: 14 }}>Tap below to upload a drawing</span>
+              </>
+            )}
+          </div>
+        )}
       </View>
+
+      {/* Draw mode controls */}
+      {mode === 'draw' && (
+        <>
+          <View style={styles.palette}>
+            {COLORS.map(c => (
+              <TouchableOpacity key={c.hex}
+                onPress={() => { setColor(c.hex); setIsEraser(false); }}
+                style={[styles.colorBtn, { backgroundColor: c.hex },
+                  color === c.hex && !isEraser && styles.colorSelected]} />
+            ))}
+            <TouchableOpacity onPress={() => setIsEraser(!isEraser)}
+              style={[styles.eraserBtn, isEraser && styles.eraserActive]}>
+              <Text style={{ fontSize: 16 }}>🧹</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.brushRow}>
+            <Text style={styles.brushLabel}>Brush:</Text>
+            {BRUSH_SIZES.map(b => (
+              <TouchableOpacity key={b.size} onPress={() => setBrush(b.size)}
+                style={[styles.brushBtn, { width: b.size + 22, height: b.size + 22, borderRadius: (b.size + 22) / 2 },
+                  brush === b.size && { backgroundColor: isEraser ? '#555' : color, borderColor: '#fff' }]}>
+                <Text style={[styles.brushTxt, brush === b.size && { color: '#fff' }]}>{b.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
 
       {/* Action buttons */}
       <View style={styles.btnRow}>
@@ -325,91 +268,61 @@ export default function DrawingScreen({ navigation, route }) {
           <ActivityIndicator size='large' color='#2ECC71' />
         ) : (
           <>
-            <TouchableOpacity style={styles.btnGray} onPress={resetCanvas}>
-              <Text style={styles.btnText}>🔄 Reset</Text>
-            </TouchableOpacity>
+            {mode === 'draw' ? (
+              <TouchableOpacity style={styles.btnGray} onPress={resetCanvas}>
+                <Text style={styles.btnText}>🔄 Reset</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.btnBlue} onPress={handleUpload}>
+                <Text style={styles.btnText}>📁 {uploadPreview ? 'Change' : 'Upload'}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.btnGreen} onPress={finishDrawing}>
-              <Text style={styles.btnText}>✅ Done → Report</Text>
+              <Text style={styles.btnText}>✅ Analyze →</Text>
             </TouchableOpacity>
           </>
         )}
       </View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container    : { flex:1, backgroundColor:'#1a1a2e', alignItems:'center', padding:12 },
-  title        : { fontSize:20, fontWeight:'bold', color:'#fff', marginTop:8 },
-  subtitle     : { fontSize:12, color:'#3498DB', fontWeight:'bold', marginBottom:10 },
-  canvasBox    : {
-    width       : '100%',
-    flex        : 1,
-    borderRadius: 16,
-    overflow    : 'hidden',
-    borderWidth : 3,
-    borderColor : '#3498DB',
-    marginBottom: 12,
-    backgroundColor: '#fff',
+  container       : { flex: 1, backgroundColor: '#1a1a2e', alignItems: 'center', padding: 10 },
+  backBtn         : { alignSelf: 'flex-start', padding: 6 },
+  backText        : { color: '#3498DB', fontSize: 14, fontWeight: 'bold' },
+  title           : { fontSize: 20, fontWeight: 'bold', color: '#fff', marginTop: 2 },
+  subtitle        : { fontSize: 12, color: '#3498DB', fontWeight: 'bold', marginBottom: 8 },
+
+  instructionCard : {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#0f3460', borderRadius: 12,
+    paddingVertical: 10, paddingHorizontal: 14,
+    marginBottom: 10, width: '100%',
+    borderLeftWidth: 4, borderLeftColor: '#3498DB',
   },
-  palette      : {
-    flexDirection : 'row',
-    flexWrap      : 'wrap',
-    justifyContent: 'center',
-    gap           : 10,
-    marginBottom  : 10,
-  },
-  colorBtn     : {
-    width       : 34,
-    height      : 34,
-    borderRadius: 17,
-    borderWidth : 2,
-    borderColor : 'rgba(255,255,255,0.2)',
-  },
-  colorSelected: {
-    borderColor : '#fff',
-    borderWidth : 3,
-    transform   : [{ scale: 1.25 }],
-  },
-  eraserBtn    : {
-    width          : 34,
-    height         : 34,
-    borderRadius   : 17,
-    borderWidth    : 2,
-    borderColor    : '#555',
-    backgroundColor: '#fff',
-    alignItems     : 'center',
-    justifyContent : 'center',
-  },
-  eraserActive : { borderColor:'#3498DB', backgroundColor:'#EBF5FB' },
-  brushRow     : {
-    flexDirection : 'row',
-    alignItems    : 'center',
-    gap           : 10,
-    marginBottom  : 12,
-  },
-  brushLabel   : { color:'#aaa', fontSize:13, fontWeight:'bold' },
-  brushBtn     : {
-    backgroundColor: '#2a2a3e',
-    borderWidth    : 2,
-    borderColor    : '#444',
-    alignItems     : 'center',
-    justifyContent : 'center',
-  },
-  brushText    : { color:'#aaa', fontSize:11, fontWeight:'bold' },
-  btnRow       : { flexDirection:'row', gap:14, paddingBottom:8 },
-  btnGreen     : {
-    backgroundColor  : '#2ECC71',
-    paddingVertical  : 13,
-    paddingHorizontal: 28,
-    borderRadius     : 12,
-  },
-  btnGray      : {
-    backgroundColor  : '#555',
-    paddingVertical  : 13,
-    paddingHorizontal: 20,
-    borderRadius     : 12,
-  },
-  btnText      : { color:'#fff', fontWeight:'bold', fontSize:14 },
+  instructionIcon : { fontSize: 26, marginRight: 10 },
+  instructionText : { flex: 1, color: '#ccc', fontSize: 13, lineHeight: 19 },
+  instructionBold : { color: '#fff', fontWeight: 'bold' },
+
+  modeRow         : { flexDirection: 'row', backgroundColor: '#0f3460', borderRadius: 12, padding: 4, gap: 4, marginBottom: 8 },
+  modeBtn         : { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 9 },
+  modeBtnActive   : { backgroundColor: '#3498DB' },
+  modeTxt         : { color: '#aaa', fontWeight: 'bold', fontSize: 13 },
+
+  canvasBox       : { width: '100%', flex: 1, borderRadius: 14, overflow: 'hidden', borderWidth: 2, borderColor: '#3498DB', marginBottom: 8, backgroundColor: '#fff' },
+  palette         : { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 8 },
+  colorBtn        : { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
+  colorSelected   : { borderColor: '#fff', borderWidth: 3, transform: [{ scale: 1.2 }] },
+  eraserBtn       : { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: '#555', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  eraserActive    : { borderColor: '#3498DB' },
+  brushRow        : { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  brushLabel      : { color: '#aaa', fontSize: 13, fontWeight: 'bold' },
+  brushBtn        : { backgroundColor: '#2a2a3e', borderWidth: 2, borderColor: '#444', alignItems: 'center', justifyContent: 'center' },
+  brushTxt        : { color: '#aaa', fontSize: 10, fontWeight: 'bold' },
+  btnRow          : { flexDirection: 'row', gap: 12, paddingBottom: 6 },
+  btnGreen        : { backgroundColor: '#2ECC71', paddingVertical: 13, paddingHorizontal: 28, borderRadius: 12 },
+  btnGray         : { backgroundColor: '#555', paddingVertical: 13, paddingHorizontal: 20, borderRadius: 12 },
+  btnBlue         : { backgroundColor: '#3498DB', paddingVertical: 13, paddingHorizontal: 20, borderRadius: 12 },
+  btnText         : { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });
