@@ -1,150 +1,104 @@
-/**
- * ActivityService.js
- *
- * All data operations:
- *   - Tries FastAPI backend (port 3001) first
- *   - Falls back to AsyncStorage if backend unreachable
- *
- * Change BACKEND_URL to your machine's LAN IP when testing on a real device.
- * e.g.  'http://192.168.1.100:3001'
- */
-
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getActivitiesForLevel, filterRecentActivities } from './activityMapping';
 
-// ─── CHANGE THIS to your computer's local IP when on a real device ───────────
-export const BACKEND_URL = 'http://10.0.2.2:3001'; // Android emulator default
-// export const BACKEND_URL = 'http://192.168.1.100:3001'; // real device example
-// ─────────────────────────────────────────────────────────────────────────────
+const ML_API_URL = 'http://127.0.0.1:5000/predict-anxiety';
+const BACKEND_URL = 'http://192.168.1.235:3001';
 
-const ACTIVITY_HISTORY_KEY     = 'activity_history';
-const ANXIETY_LEVEL_KEY        = 'elders_anxiety_level';
-const ANXIETY_SCORE_KEY        = 'elders_total_score';
-const QUESTIONNAIRE_DATE_KEY   = 'elders_questionnaire_last_filled';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// INTERNAL HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function fetchJSON(path, options = {}) {
-  const res = await fetch(`${BACKEND_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+/**
+ * Call ML endpoint to predict anxiety level.
+ * @param {object} payload - Questionnaire answers { q1, q2, ..., q10 }
+ * @returns {object} { ml_prediction, total_score, manual_result, answers }
+ */
+export async function predictAnxiety(payload) {
+  try {
+    const response = await axios.post(ML_API_URL, payload, { timeout: 15000 });
+    return response.data;
+  } catch (error) {
+    console.warn('ML prediction error:', error.message);
+    throw new Error('Could not reach the prediction server. Please try again.');
+  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PUBLIC API
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Get mock prediction for testing.
+ * @param {string} level - One of: Minimal, Mild, Moderate, Severe
+ * @returns {object} mock prediction result
+ */
+export function getMockPrediction(level) {
+  const scores = { Minimal: 4, Mild: 8, Moderate: 14, Severe: 22 };
+  return {
+    ml_prediction: level,
+    total_score: scores[level] || 4,
+    manual_result: level,
+    answers: [0, 1, 2, 0, 1, 0, 1, 2, 0, 1],
+  };
+}
 
 /**
  * Mark an activity as complete.
- * Saves to backend AND AsyncStorage (offline-safe).
+ * @param {string} activityName
+ * @param {string} anxietyLevel
  */
 export async function completeActivity(activityName, anxietyLevel) {
   const completedAt = new Date().toISOString();
-  const record = { activity_name: activityName, anxiety_level: anxietyLevel, completed_at: completedAt };
+  const record = {
+    activity_name: activityName,
+    anxiety_level: anxietyLevel,
+    completed_at: completedAt,
+  };
 
-  // Always save locally first
+  // Save locally
   try {
-    const raw = await AsyncStorage.getItem(ACTIVITY_HISTORY_KEY);
-    const history = raw ? JSON.parse(raw) : [];
+    const existing = await AsyncStorage.getItem('activity_history');
+    const history = existing ? JSON.parse(existing) : [];
     history.unshift(record);
-    await AsyncStorage.setItem(ACTIVITY_HISTORY_KEY, JSON.stringify(history));
+    await AsyncStorage.setItem('activity_history', JSON.stringify(history));
   } catch (e) {
-    console.warn('[ActivityService] Local save failed:', e.message);
+    console.warn('Failed to save locally:', e.message);
   }
 
-  // Try backend (non-blocking — failure is silent)
+  // Save to backend
   try {
-    await fetchJSON('/activities/complete', {
-      method: 'POST',
-      body: JSON.stringify(record),
-    });
+    await axios.post(`${BACKEND_URL}/activities/complete`, record, { timeout: 10000 });
   } catch (e) {
-    console.warn('[ActivityService] Backend save failed (offline?):', e.message);
+    console.warn('Failed to save to backend:', e.message);
   }
 
   return record;
 }
 
 /**
- * Get activity history.
- * Tries backend first, falls back to AsyncStorage.
+ * Get activity history from backend, falling back to local storage.
+ * @returns {Array} history records
  */
 export async function getActivityHistory() {
   try {
-    const data = await fetchJSON('/activities/history');
-    // Sync latest backend data into local cache
-    await AsyncStorage.setItem(ACTIVITY_HISTORY_KEY, JSON.stringify(data));
-    return data;
+    const response = await axios.get(`${BACKEND_URL}/activities/history`, { timeout: 10000 });
+    return response.data;
   } catch (e) {
-    console.warn('[ActivityService] Backend history fetch failed, using local:', e.message);
+    console.warn('Backend history fetch failed, using local:', e.message);
     try {
-      const raw = await AsyncStorage.getItem(ACTIVITY_HISTORY_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
+      const existing = await AsyncStorage.getItem('activity_history');
+      return existing ? JSON.parse(existing) : [];
+    } catch (localErr) {
       return [];
     }
   }
 }
 
 /**
- * Save questionnaire result to backend + cache anxiety level locally.
- */
-export async function saveQuestionnaireResult({ answers, total_score, manual_result, ml_prediction }) {
-  // Cache locally for navigation decisions
-  try {
-    await AsyncStorage.setItem(QUESTIONNAIRE_DATE_KEY, new Date().toISOString());
-    await AsyncStorage.setItem(ANXIETY_LEVEL_KEY, ml_prediction || 'Minimal');
-    await AsyncStorage.setItem(ANXIETY_SCORE_KEY, String(total_score));
-  } catch (e) {
-    console.warn('[ActivityService] Local cache save failed:', e.message);
-  }
-
-  // Send to backend
-  try {
-    await fetchJSON('/save-result', {
-      method: 'POST',
-      body: JSON.stringify({ answers, total_score, manual_result, ml_prediction }),
-    });
-  } catch (e) {
-    console.warn('[ActivityService] Backend result save failed (offline?):', e.message);
-  }
-}
-
-/**
- * Check if there is a recent activity (within last 7 days).
- * Returns { hasRecent, anxietyLevel, totalScore } from local cache.
- */
-export async function checkRecentActivity() {
-  try {
-    const raw = await AsyncStorage.getItem(ACTIVITY_HISTORY_KEY);
-    const history = raw ? JSON.parse(raw) : [];
-    const now = new Date();
-    const hasRecent = history.some((r) => {
-      const diff = (now - new Date(r.completed_at)) / (1000 * 60 * 60 * 24);
-      return diff < 7;
-    });
-    const anxietyLevel = (await AsyncStorage.getItem(ANXIETY_LEVEL_KEY)) || 'Minimal';
-    const totalScore   = parseInt((await AsyncStorage.getItem(ANXIETY_SCORE_KEY)) || '0', 10);
-    return { hasRecent, anxietyLevel, totalScore };
-  } catch (e) {
-    return { hasRecent: false, anxietyLevel: 'Minimal', totalScore: 0 };
-  }
-}
-
-/**
- * Get recommended activities for the given anxiety level,
- * with recently completed ones moved to the bottom.
+ * Get recommended activities for the given anxiety level, with smart filtering.
+ * @param {string} anxietyLevel
+ * @returns {Array} recommended activities (recently completed moved to bottom)
  */
 export async function getRecommendedActivities(anxietyLevel) {
   const activities = getActivitiesForLevel(anxietyLevel);
   let history = [];
   try {
     history = await getActivityHistory();
-  } catch { /* proceed without history */ }
+  } catch (e) {
+    // proceed without history
+  }
   return filterRecentActivities(activities, history);
 }

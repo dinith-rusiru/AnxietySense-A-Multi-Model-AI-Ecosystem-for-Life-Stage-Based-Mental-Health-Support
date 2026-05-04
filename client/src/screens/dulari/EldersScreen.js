@@ -1,19 +1,29 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, Platform, TouchableOpacity,
-  ScrollView, Modal, ActivityIndicator, Image,
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+  Alert,
+  Image,
 } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
-import { checkRecentActivity, saveQuestionnaireResult } from './ActivityService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ML_SERVER = 'http://127.0.0.1:5000';
+
 
 const OPTIONS = [
   { label: 'Not at all', value: 0 },
-  { label: 'Sometimes',  value: 1 },
-  { label: 'Often',      value: 2 },
-  { label: 'Always',     value: 3 },
+  { label: 'Sometimes', value: 1 },
+  { label: 'Often',     value: 2 },
+  { label: 'Always',    value: 3 },
 ];
 
 const QUESTIONS = [
@@ -30,10 +40,12 @@ const QUESTIONS = [
 ];
 
 const SECTION_LABELS = [
-  { title: 'Cognitive / Worry',     start: 0, end: 4  },
-  { title: 'Somatic / Physical',    start: 4, end: 7  },
+  { title: 'Cognitive / Worry', start: 0, end: 4 },
+  { title: 'Somatic / Physical', start: 4, end: 7 },
   { title: 'Affective / Emotional', start: 7, end: 10 },
 ];
+
+/* ───────────── sub-components ───────────── */
 
 function QuestionCard({ index, text, value, onSelect }) {
   return (
@@ -56,238 +68,227 @@ function QuestionCard({ index, text, value, onSelect }) {
   );
 }
 
-// ── Web Webcam Component ───────────────────────────────────────────────────────
-function WebCamera({ onCapture, onClose }) {
-  const videoRef   = useRef(null);
-  const streamRef  = useRef(null);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState(null);
+/* Backend URL – your Mac's local IP so iPhone can reach it */
+const BACKEND_URL = 'http://192.168.1.235:3001';
+const GAS_HISTORY_KEY = 'elders_gas_history';
 
+function getAnxietyLevelFromScore(score, totalQuestions) {
+  if (!Number.isFinite(score) || !Number.isFinite(totalQuestions) || totalQuestions <= 0) {
+    return 'Minimal';
+  }
+
+  const ratio = score / totalQuestions;
+  if (ratio >= 0.75) return 'Severe';
+  if (ratio >= 0.5) return 'Moderate';
+  if (ratio >= 0.25) return 'Mild';
+  return 'Minimal';
+}
+
+/* ───────────── main screen ───────────── */
+
+export default function EldersScreen({ navigation }) {
+  // Check if any activity was completed within the last 7 days
   React.useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-      .then((stream) => {
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-          setReady(true);
+    const checkRecentActivity = async () => {
+      try {
+        // Only redirect if not coming from test button
+        if (navigation && navigation.getState) {
+          const route = navigation.getState().routes[navigation.getState().index];
+          if (route && route.name === 'Elders' && route.params && route.params.fromTestButton) {
+            return; // Don't redirect, show questionnaire
+          }
         }
-      })
-      .catch((e) => {
-        console.warn('Webcam error:', e);
-        setError('Could not access webcam. Please allow camera permission or use "Upload Photo".');
-      });
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
+        const existing = await AsyncStorage.getItem('activity_history');
+        const history = existing ? JSON.parse(existing) : [];
+        const now = new Date();
+        const hasRecentActivity = history.some((record) => {
+          const completedDate = new Date(record.completed_at);
+          const diffDays = (now - completedDate) / (1000 * 60 * 60 * 24);
+          return diffDays < 7;
+        });
+        if (hasRecentActivity) {
+          // Retrieve saved anxiety result
+          const savedLevel = await AsyncStorage.getItem('elders_anxiety_level');
+          const savedScore = await AsyncStorage.getItem('elders_total_score');
+          navigation.replace('RecommendedActivities', {
+            anxietyLevel: savedLevel || 'Minimal',
+            totalScore: savedScore ? parseInt(savedScore, 10) : 0,
+            predictedSongs: [],
+          });
+        }
+      } catch (e) {
+        console.warn('Error checking recent activity:', e.message);
       }
     };
+    checkRecentActivity();
   }, []);
+  /* phase: 'questionnaire' | 'camera' | 'preview' */
+  const [phase, setPhase] = useState('questionnaire');
 
-  const capture = () => {
-    if (!videoRef.current) return;
-    const canvas = document.createElement('canvas');
-    canvas.width  = videoRef.current.videoWidth  || 640;
-    canvas.height = videoRef.current.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    // Mirror the capture to match what user sees
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(videoRef.current, 0, 0);
-    canvas.toBlob((blob) => {
-      const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
-      const uri  = URL.createObjectURL(blob);
-      onCapture({ uri, file });
-    }, 'image/jpeg', 0.9);
+  // Age modal state
+  const [showAgeModal, setShowAgeModal] = useState(true);
+  const [isOver60, setIsOver60] = useState(null);
+  const [showAgeVerificationModal, setShowAgeVerificationModal] = useState(false);
+  const [ageVerificationMessage, setAgeVerificationMessage] = useState('');
+
+  /* camera */
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef(null);
+  const [photo, setPhoto] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  /* questionnaire */
+  const [answers, setAnswers] = useState(Array(10).fill(null));
+  const [showModal, setShowModal] = useState(false);
+  const [totalScore, setTotalScore] = useState(0);
+  const [mlPrediction, setMlPrediction] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const toWebFile = async (photoObj) => {
+    if (Platform.OS !== 'web') return null;
+    if (photoObj?.webFile) return photoObj.webFile;
+    if (!photoObj?.uri) return null;
+
+    const res = await fetch(photoObj.uri);
+    const blob = await res.blob();
+    return new File([blob], 'selfie.jpg', { type: blob.type || 'image/jpeg' });
   };
 
-  return (
-    <View style={wc.container}>
-      <Text style={wc.title}>Take a Photo</Text>
-      {error ? (
-        <View style={wc.errorBox}>
-          <Text style={wc.errorText}>{error}</Text>
-        </View>
-      ) : (
-        <video
-          ref={videoRef}
-          style={{ width: '100%', maxHeight: 360, borderRadius: 12,
-                   transform: 'scaleX(-1)', backgroundColor: '#000' }}
-          playsInline
-          muted
-        />
-      )}
-      <View style={wc.btnRow}>
-        {!error && (
-          <TouchableOpacity style={wc.snapBtn} onPress={capture} disabled={!ready}>
-            <Text style={wc.snapBtnText}>📸 Capture</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={wc.cancelBtn} onPress={onClose}>
-          <Text style={wc.cancelBtnText}>✕ Close</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
+  /* ── camera helpers ── */
 
-const wc = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: '#EAF4F4', padding: 20, alignItems: 'center' },
-  title:       { fontSize: 22, fontWeight: '700', color: '#333', marginBottom: 16 },
-  errorBox:    { backgroundColor: '#ffeeee', padding: 16, borderRadius: 10, marginBottom: 16 },
-  errorText:   { color: '#c00', fontSize: 14, textAlign: 'center' },
-  btnRow:      { flexDirection: 'row', gap: 16, marginTop: 20 },
-  snapBtn:     { backgroundColor: '#007AFF', paddingVertical: 14, paddingHorizontal: 36, borderRadius: 10 },
-  snapBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  cancelBtn:   { backgroundColor: '#aaa', paddingVertical: 14, paddingHorizontal: 36, borderRadius: 10 },
-  cancelBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-});
+  const takePhoto = async () => {
+    try {
+      if (cameraRef.current) {
+        const raw = await cameraRef.current.takePictureAsync({
+          quality: 0.8,
+        });
 
-// ── Age Result Modal (replaces Alert on web) ──────────────────────────────────
-function AgeResultModal({ visible, predictedAge, onContinue, onRetake }) {
-  if (!visible) return null;
-  const isOk = predictedAge === null || predictedAge === undefined || predictedAge >= 60;
-  return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.modalBackdrop}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>
-            {isOk ? '✅ Age Verified' : '⚠️ Age Verification'}
-          </Text>
-          {predictedAge !== null && predictedAge !== undefined && (
-            <Text style={{ fontSize: 18, color: '#333', marginBottom: 8 }}>
-              Predicted age: <Text style={{ fontWeight: '700', color: '#4C9F70' }}>{predictedAge}</Text>
-            </Text>
-          )}
-          <Text style={{ fontSize: 14, color: '#555', marginBottom: 16 }}>
-            {isOk
-              ? 'You appear to be 60 or older. Proceeding to questionnaire.'
-              : 'You appear to be below 60. You can retake the photo or continue anyway.'}
-          </Text>
-          <TouchableOpacity style={[styles.button, { marginBottom: 10 }]} onPress={onContinue}>
-            <Text style={styles.buttonText}>Continue to Questionnaire</Text>
-          </TouchableOpacity>
-          {!isOk && (
-            <TouchableOpacity style={[styles.button, { backgroundColor: '#aaa' }]} onPress={onRetake}>
-              <Text style={styles.buttonText}>Retake Photo</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    </Modal>
-  );
-}
+        if (Platform.OS === 'web') {
+          setPhoto({ uri: raw.uri, webFile: null });
+          setPhase('preview');
+          return;
+        }
 
-// ── Main Screen ───────────────────────────────────────────────────────────────
-export default function EldersScreen({ navigation, route }) {
-
-  React.useEffect(() => {
-    const fromTest = route?.params?.fromTestButton;
-    if (fromTest) return;
-    checkRecentActivity().then(({ hasRecent, anxietyLevel, totalScore }) => {
-      if (hasRecent) {
-        navigation.replace('RecommendedActivities', { anxietyLevel, totalScore, predictedSongs: [] });
+        // Convert to JPEG (iOS may capture HEIC)
+        const manipulated = await ImageManipulator.manipulateAsync(
+          raw.uri,
+          [{ resize: { width: 640 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+        );
+        setPhoto(manipulated);
+        setPhase('preview');
       }
-    });
-  }, []);
-
-  // phase: 'questionnaire' | 'webcam' | 'preview'
-  const [phase,           setPhase]           = useState('questionnaire');
-  const [showAgeModal,    setShowAgeModal]     = useState(true);
-  const [photo,           setPhoto]           = useState(null);
-  const [analyzing,       setAnalyzing]       = useState(false);
-  const [answers,         setAnswers]         = useState(Array(10).fill(null));
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [totalScore,      setTotalScore]      = useState(0);
-  const [mlPrediction,    setMlPrediction]    = useState('');
-  const [submitting,      setSubmitting]      = useState(false);
-
-  // Age result modal state
-  const [showAgeResult,   setShowAgeResult]   = useState(false);
-  const [predictedAge,    setPredictedAge]    = useState(null);
-
-  const fileInputRef = useRef(null);
-
-  // ── pick from file ─────────────────────────────────────────────────────────
-  const pickFromFile = () => {
-    if (Platform.OS === 'web') {
-      fileInputRef.current?.click();
-    } else {
-      ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 })
-        .then((result) => {
-          if (!result.canceled && result.assets?.length > 0) {
-            setPhoto({ uri: result.assets[0].uri, file: null });
-            setPhase('preview');
-          }
-        }).catch(console.warn);
+    } catch (e) {
+      console.warn('Failed to take photo:', e);
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    // Reset so same file can be picked again
-    e.target.value = '';
-    const uri = URL.createObjectURL(file);
-    setPhoto({ uri, file });
-    setPhase('preview');
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const uri = asset.uri;
+
+        if (Platform.OS === 'web') {
+          setPhoto({ uri, webFile: asset.file || null });
+          setPhase('preview');
+          return;
+        }
+
+        const manipulated = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: 640 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+        );
+        setPhoto(manipulated);
+        setPhase('preview');
+      }
+    } catch (err) {
+      console.warn('Gallery pick error:', err);
+    }
   };
 
-  const handleWebcamCapture = (capturedPhoto) => {
-    setPhoto(capturedPhoto);
-    setPhase('preview');
+  const retake = () => {
+    setPhoto(null);
+    setPhase('camera');
   };
 
-  // ── analyze photo ──────────────────────────────────────────────────────────
   const analyzePhoto = async () => {
     if (!photo) return;
     setAnalyzing(true);
+    setStatusMessage('Analyzing photo...');
     try {
       const formData = new FormData();
 
       if (Platform.OS === 'web') {
-        if (photo.file) {
-          formData.append('image', photo.file, 'selfie.jpg');
-        } else {
-          const res  = await fetch(photo.uri);
-          const blob = await res.blob();
-          formData.append('image', new File([blob], 'selfie.jpg', { type: 'image/jpeg' }));
+        const file = await toWebFile(photo);
+        if (!file) {
+          throw new Error('No valid web image file was found. Please retake or select from gallery.');
         }
+        formData.append('image', file);
       } else {
-        formData.append('image', { uri: photo.uri, type: 'image/jpeg', name: 'selfie.jpg' });
+        // iOS / Android: RN-native FormData accepts { uri, type, name }
+        formData.append('image', {
+          uri: photo.uri,
+          type: 'image/jpeg',
+          name: 'selfie.jpg',
+        });
       }
       formData.append('age', '60');
 
-      const response = await fetch(`${ML_SERVER}/predict-emotion-songs`, {
+      const response = await fetch('http://127.0.0.1:5000/predict-emotion-songs', {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(`Server error ${response.status}: ${errText}`);
+        throw new Error(`Server responded ${response.status}: ${errText}`);
       }
 
       const data = await response.json();
-      console.log('Age prediction response:', data);
+      const predictedAge = data.predicted_age;
 
-      // Show result in modal (not Alert — Alert broken on web)
-      setPredictedAge(data.predicted_age);
-      setShowAgeResult(true);
+      if (predictedAge === undefined || predictedAge === null) {
+        throw new Error('Age prediction response did not include predicted_age.');
+      }
 
-    } catch (e) {
-      console.error('analyzePhoto error:', e);
-      // Show error as modal too
-      setPredictedAge(null);
-      setShowAgeResult(true);
+      setStatusMessage('');
+
+      if (predictedAge >= 60) {
+        setShowAgeVerificationModal(false);
+        setAgeVerificationMessage('');
+        setPhase('questionnaire');
+      } else {
+        setAgeVerificationMessage(`Your predicted age is ${predictedAge}. You appear to be below age 60.`);
+        setShowAgeVerificationModal(true);
+      }
+    } catch (error) {
+      console.warn('Analyze error:', error);
+      const message = error.message || 'Could not reach the age prediction server. Please check your connection and try again.';
+      setStatusMessage(Platform.OS === 'web' ? 'Prediction server is not reachable in the browser. Continuing without age check.' : message);
+
+      if (Platform.OS === 'web') {
+        setPhase('questionnaire');
+      } else {
+        Alert.alert('Error', message);
+      }
     } finally {
       setAnalyzing(false);
     }
   };
 
-  // ── questionnaire ──────────────────────────────────────────────────────────
+  /* ── questionnaire helpers ── */
+
   const handleSelect = (index, value) => {
-    const next = [...answers]; next[index] = value; setAnswers(next);
+    const next = [...answers];
+    next[index] = value;
+    setAnswers(next);
   };
 
   const allAnswered = answers.every((a) => a !== null);
@@ -295,119 +296,210 @@ export default function EldersScreen({ navigation, route }) {
   const handleSubmit = async () => {
     if (!allAnswered) return;
     setSubmitting(true);
+    setStatusMessage('Calculating score...');
     try {
       const payload = {};
-      answers.forEach((val, i) => { payload[`q${i + 1}`] = val; });
-      const response   = await axios.post(`${ML_SERVER}/predict-anxiety`, payload, { timeout: 15000 });
+      answers.forEach((val, i) => {
+        payload[`q${i + 1}`] = val;
+      });
+
+      const response = await axios.post(
+        'http://127.0.0.1:5000/predict-anxiety',
+        payload,
+        { timeout: 15000 },
+      );
+
       const resultData = response.data;
       setTotalScore(resultData.total_score);
-      setMlPrediction(resultData.ml_prediction || 'Minimal');
-      setShowResultModal(true);
-      await saveQuestionnaireResult({
-        answers:       resultData.answers,
-        total_score:   resultData.total_score,
-        manual_result: resultData.manual_result,
-        ml_prediction: resultData.ml_prediction,
-      });
-    } catch (e) {
-      console.error('Submit error:', e);
-      // show inline error modal
-      setMlPrediction('Error');
-      setTotalScore(0);
-      setShowResultModal(true);
+      setMlPrediction(resultData.ml_prediction || '');
+      setShowModal(true);
+      setStatusMessage('');
+
+      // Always save locally, even if backend save fails.
+      try {
+        const nowIso = new Date().toISOString();
+        await AsyncStorage.setItem('elders_questionnaire_last_filled', nowIso);
+        await AsyncStorage.setItem('elders_anxiety_level', resultData.ml_prediction || 'Minimal');
+        await AsyncStorage.setItem('elders_total_score', String(resultData.total_score));
+
+        const historyRaw = await AsyncStorage.getItem(GAS_HISTORY_KEY);
+        const history = historyRaw ? JSON.parse(historyRaw) : [];
+        history.unshift({
+          total_score: resultData.total_score,
+          ml_prediction: resultData.ml_prediction || 'Minimal',
+          answers: resultData.answers || null,
+          saved_at: nowIso,
+        });
+        await AsyncStorage.setItem(GAS_HISTORY_KEY, JSON.stringify(history));
+      } catch (localErr) {
+        console.warn('Failed to save GAS result locally:', localErr.message);
+      }
+
+      // Save the full result to MySQL via our backend
+      try {
+        await axios.post(`${BACKEND_URL}/save-result`, {
+          answers: resultData.answers,
+          total_score: resultData.total_score,
+          manual_result: resultData.manual_result,
+          ml_prediction: resultData.ml_prediction,
+        }, { timeout: 10000 });
+        console.log('Result saved to database');
+      } catch (saveErr) {
+        console.warn('Failed to save result to DB:', saveErr.message);
+      }
+    } catch (error) {
+      const localScore = Object.values(answers).filter((a) => a === 'Yes').length;
+      const localLevel = getAnxietyLevelFromScore(localScore, questions.length);
+
+      setTotalScore(localScore);
+      setMlPrediction(localLevel);
+      setShowModal(true);
+
+      const message = Platform.OS === 'web'
+        ? 'Prediction server is not reachable in the browser. Showing local result instead.'
+        : 'Could not reach the prediction server. Please check your connection and try again.';
+      setStatusMessage(message);
+
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ── WEBCAM PHASE ───────────────────────────────────────────────────────────
-  if (phase === 'webcam') {
+  /* ── renders ── */
+
+  // ---------- AGE VERIFICATION MODAL ----------
+  if (showAgeVerificationModal) {
     return (
-      <WebCamera
-        onCapture={handleWebcamCapture}
-        onClose={() => setPhase('questionnaire')}
-      />
-    );
-  }
+      <View style={styles.container}>
+        <Modal visible transparent animationType="fade" onRequestClose={() => setShowAgeVerificationModal(false)}>
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Age Verification</Text>
+              <Text style={styles.modalNote}>{ageVerificationMessage}</Text>
 
-  // ── PREVIEW PHASE ──────────────────────────────────────────────────────────
-  if (phase === 'preview') {
-    return (
-      <View style={styles.previewContainer}>
-        <Text style={styles.previewTitle}>Review Your Photo</Text>
-
-        {photo?.uri && (
-          <Image source={{ uri: photo.uri }} style={styles.previewImage} resizeMode="contain" />
-        )}
-
-        <View style={styles.previewBtnRow}>
-          {analyzing ? (
-            <ActivityIndicator size="large" color="#4C9F70" />
-          ) : (
-            <>
-              <TouchableOpacity style={styles.analyzeBtn} onPress={analyzePhoto}>
-                <Text style={styles.analyzeBtnText}>✓ Analyze Age</Text>
-              </TouchableOpacity>
               <TouchableOpacity
-                style={styles.retakeBtn}
-                onPress={() => { setPhoto(null); setPhase('questionnaire'); }}
+                style={[styles.button, { marginTop: 16 }]}
+                onPress={() => {
+                  setShowAgeVerificationModal(false);
+                  retake();
+                }}
               >
-                <Text style={styles.retakeBtnText}>✕ Cancel</Text>
+                <Text style={styles.buttonText}>Go Back</Text>
               </TouchableOpacity>
-            </>
-          )}
-        </View>
 
-        {/* Age Result Modal */}
-        <AgeResultModal
-          visible={showAgeResult}
-          predictedAge={predictedAge}
-          onContinue={() => { setShowAgeResult(false); setPhase('questionnaire'); }}
-          onRetake={() => { setShowAgeResult(false); setPhoto(null); setPhase('questionnaire'); }}
-        />
+              <TouchableOpacity
+                style={[styles.button, { marginTop: 8, backgroundColor: '#007AFF' }]}
+                onPress={() => {
+                  setShowAgeVerificationModal(false);
+                  setPhase('questionnaire');
+                }}
+              >
+                <Text style={styles.buttonText}>Continue Anyway</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
 
-  // ── QUESTIONNAIRE PHASE ────────────────────────────────────────────────────
+
+  // ---------- CAMERA PHASE ----------
+  if (phase === 'camera') {
+    if (!permission) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#4C9F70" />
+          <Text style={styles.centerText}>Loading camera permissions…</Text>
+        </View>
+      );
+    }
+    if (!permission.granted) {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.centerText}>We need camera permission to predict your age</Text>
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.cameraContainer}>
+        <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+        <View style={styles.cameraControls}>
+          <TouchableOpacity style={styles.shutter} onPress={takePhoto}>
+            <View style={styles.shutterInner} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.shutter, { marginTop: 16, backgroundColor: '#4C9F70' }]} onPress={pickImageFromGallery}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Gallery</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ---------- PREVIEW PHASE ----------
+  if (phase === 'preview') {
+    return (
+      <View style={styles.cameraContainer}>
+        <View style={styles.previewWrap}>
+          <Image
+            source={{ uri: photo?.uri }}
+            style={[styles.previewImage, { transform: [{ scaleX: -1 }] }]}
+          />
+        </View>
+        <View style={styles.cameraControls}>
+          {statusMessage ? <Text style={styles.previewStatusText}>{statusMessage}</Text> : null}
+          {analyzing ? (
+            <ActivityIndicator size="large" color="#fff" />
+          ) : (
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.analyzeBtn} onPress={analyzePhoto}>
+                <Text style={styles.analyzeBtnText}>Analyze</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.retakeBtn} onPress={retake}>
+                <Text style={styles.retakeBtnText}>Retake</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ---------- QUESTIONNAIRE PHASE ----------
   return (
     <View style={styles.container}>
-
-      {/* Hidden file input — web only */}
-      {Platform.OS === 'web' && (
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-      )}
-
       <Text style={styles.title}>Elders Questionnaire</Text>
+      {statusMessage ? <Text style={styles.statusText}>{statusMessage}</Text> : null}
 
-      {/* Age Modal */}
-      <Modal visible={showAgeModal} transparent animationType="fade">
+      <Modal visible={showAgeModal} transparent animationType="fade" onRequestClose={() => {}}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Verify Your Age</Text>
-            <Text style={{ color: '#555', marginBottom: 16, fontSize: 14 }}>
-              Are you over 60, or would you like us to predict your age from a photo?
-            </Text>
-            <TouchableOpacity style={styles.button} onPress={() => setShowAgeModal(false)}>
-              <Text style={styles.buttonText}>✅ Yes, I am over 60</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Are you over 60 years old?</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+              <TouchableOpacity
+                style={[styles.button, { flex: 1, marginRight: 8 }]}
+                onPress={() => { setIsOver60(true); setShowAgeModal(false); }}
+              >
+                <Text style={styles.buttonText}>Yes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, { flex: 1, marginLeft: 8, backgroundColor: '#aaa' }]}
+                onPress={() => { setIsOver60(false); setShowAgeModal(false); }}
+              >
+                <Text style={styles.buttonText}>No</Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
-              style={[styles.button, { marginTop: 10, backgroundColor: '#007AFF' }]}
-              onPress={() => { setShowAgeModal(false); setPhase('webcam'); }}
+              style={[styles.button, { marginTop: 16, backgroundColor: '#007AFF' }]}
+              onPress={() => { setShowAgeModal(false); setPhase('camera'); }}
             >
-              <Text style={styles.buttonText}>📷 Use Webcam</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, { marginTop: 10, backgroundColor: '#555' }]}
-              onPress={() => { setShowAgeModal(false); pickFromFile(); }}
-            >
-              <Text style={styles.buttonText}>🖼️ Upload Photo</Text>
+              <Text style={styles.buttonText}>Predict your age</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -418,18 +510,20 @@ export default function EldersScreen({ navigation, route }) {
           <View key={sec.title}>
             <Text style={styles.section}>{sec.title}</Text>
             {QUESTIONS.slice(sec.start, sec.end).map((q, i) => {
-              const idx = sec.start + i;
+              const globalIndex = sec.start + i;
               return (
                 <QuestionCard
-                  key={idx} index={idx} text={q}
-                  value={answers[idx]}
-                  onSelect={(val) => handleSelect(idx, val)}
+                  key={globalIndex}
+                  index={globalIndex}
+                  text={q}
+                  value={answers[globalIndex]}
+                  onSelect={(val) => handleSelect(globalIndex, val)}
                 />
               );
             })}
           </View>
         ))}
-        <View style={{ height: 160 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       <View style={styles.footer}>
@@ -438,54 +532,53 @@ export default function EldersScreen({ navigation, route }) {
           onPress={handleSubmit}
           disabled={!allAnswered || submitting}
         >
-          {submitting
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Submit Questionnaire</Text>
-          }
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Submit</Text>
+          )}
         </TouchableOpacity>
-        <View style={styles.photoRow}>
-          <TouchableOpacity
-            style={[styles.photoBtn, { backgroundColor: '#007AFF' }]}
-            onPress={() => setPhase('webcam')}
-          >
-            <Text style={styles.photoBtnText}>📷 Webcam</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.photoBtn, { backgroundColor: '#555' }]}
-            onPress={pickFromFile}
-          >
-            <Text style={styles.photoBtnText}>🖼️ Upload</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 10, backgroundColor: '#007AFF' }]}
+          onPress={() => setPhase('camera')}
+        >
+          <Text style={styles.buttonText}>Predict your age</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Result Modal */}
-      <Modal visible={showResultModal} transparent animationType="slide">
+      <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Your GAS Score</Text>
+            <Text style={styles.modalTitle}>GAS Score</Text>
             <Text style={styles.modalScore}>{totalScore}</Text>
-            <Text style={styles.modalPrediction}>Anxiety Level: {mlPrediction}</Text>
+            {mlPrediction ? (
+              <Text style={styles.modalPrediction}>Prediction: {mlPrediction}</Text>
+            ) : null}
             <Text style={styles.modalNote}>Thank you for completing the questionnaire.</Text>
+
             <TouchableOpacity
-              style={[styles.button, { marginTop: 16 }]}
+              style={[styles.button, { marginTop: 16 }]} 
               onPress={() => {
-                setShowResultModal(false);
+                setShowModal(false);
                 navigation.navigate('RecommendedActivities', {
                   anxietyLevel: mlPrediction || 'Minimal',
                   totalScore,
-                  predictedSongs: [],
+                  predictedSongs: photo?.songs || [],
                 });
               }}
             >
               <Text style={styles.buttonText}>View Activities</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.button, { marginTop: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#4C9F70' }]}
               onPress={() => {
-                setShowResultModal(false);
+                setShowModal(false);
                 setAnswers(Array(10).fill(null));
-                navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Home' }],
+                });
               }}
             >
               <Text style={[styles.buttonText, { color: '#4C9F70' }]}>Close</Text>
@@ -497,37 +590,183 @@ export default function EldersScreen({ navigation, route }) {
   );
 }
 
+/* ───────────── styles ───────────── */
+
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#EAF4F4' },
-  title:          { fontSize: 24, fontWeight: '700', color: '#333', paddingHorizontal: 16, paddingTop: 16 },
-  section:        { fontSize: 16, color: '#4C9F70', paddingHorizontal: 16, marginTop: 8, marginBottom: 8, fontWeight: '600' },
-  scrollContent:  { paddingHorizontal: 16, paddingBottom: 100 },
-  card:           { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginVertical: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  cardTitle:      { fontSize: 16, color: '#333', marginBottom: 12, fontWeight: '600' },
-  optionsRow:     { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  optionBtn:      { width: '48%', borderWidth: 1, borderColor: '#4C9F70', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 6, marginVertical: 4, backgroundColor: '#F6FBF9', alignItems: 'center', justifyContent: 'center' },
-  optionSelected: { backgroundColor: '#4C9F70', borderColor: '#4C9F70' },
-  optionText:     { color: '#4C9F70', fontWeight: '600', fontSize: 13, textAlign: 'center' },
-  optionTextSelected: { color: '#fff' },
-  footer:         { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: '#EAF4F4' },
-  button:         { backgroundColor: '#4C9F70', padding: 15, borderRadius: 10, alignItems: 'center' },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText:     { fontSize: 16, color: '#FFF', fontWeight: '600' },
-  photoRow:       { flexDirection: 'row', gap: 10, marginTop: 10 },
-  photoBtn:       { flex: 1, padding: 13, borderRadius: 10, alignItems: 'center' },
-  photoBtnText:   { color: '#fff', fontWeight: '700', fontSize: 15 },
-  previewContainer: { flex: 1, backgroundColor: '#EAF4F4', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  previewTitle:   { fontSize: 22, fontWeight: '700', color: '#333', marginBottom: 20 },
-  previewImage:   { width: '100%', height: 340, borderRadius: 16, marginBottom: 24, backgroundColor: '#ddd' },
-  previewBtnRow:  { flexDirection: 'row', gap: 16 },
-  analyzeBtn:     { backgroundColor: '#007AFF', paddingVertical: 14, paddingHorizontal: 36, borderRadius: 10 },
+  /* camera & preview */
+  cameraContainer: { flex: 1, backgroundColor: '#000' },
+  camera: { flex: 1 },
+  cameraControls: {
+    position: 'absolute',
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  shutter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#fff',
+  },
+  shutterInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+  },
+  previewWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+  },
+  previewImage: {
+    width: '90%',
+    height: '80%',
+    resizeMode: 'contain',
+    borderRadius: 12,
+  },
+  previewStatusText: {
+    color: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    textAlign: 'center',
+    maxWidth: '90%',
+  },
+  actionRow: { flexDirection: 'row', gap: 16, alignItems: 'center' },
+  analyzeBtn: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    borderRadius: 10,
+  },
   analyzeBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  retakeBtn:      { backgroundColor: '#aaa', paddingVertical: 14, paddingHorizontal: 36, borderRadius: 10 },
-  retakeBtnText:  { color: '#fff', fontWeight: '600', fontSize: 16 },
-  modalBackdrop:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modalCard:      { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 420 },
-  modalTitle:     { fontSize: 20, fontWeight: '700', color: '#333', marginBottom: 8 },
-  modalScore:     { fontSize: 36, fontWeight: '800', color: '#4C9F70', marginBottom: 8 },
-  modalPrediction:{ fontSize: 16, fontWeight: '600', color: '#4C9F70', marginBottom: 8 },
-  modalNote:      { fontSize: 14, color: '#555' },
+  retakeBtn: {
+    backgroundColor: '#4C9F70',
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    borderRadius: 10,
+  },
+  retakeBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#EAF4F4',
+  },
+  centerText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  statusText: {
+    backgroundColor: '#FFF4D9',
+    color: '#6B4E00',
+    borderColor: '#E8C56A',
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    fontSize: 14,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+
+  /* questionnaire */
+  container: { flex: 1, backgroundColor: '#EAF4F4' },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#333',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  section: {
+    fontSize: 16,
+    color: '#4C9F70',
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  cardTitle: { fontSize: 16, color: '#333', marginBottom: 12, fontWeight: '600' },
+  optionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  optionBtn: {
+    width: '48%',
+    borderWidth: 1,
+    borderColor: '#4C9F70',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    marginVertical: 4,
+    backgroundColor: '#F6FBF9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionSelected: { backgroundColor: '#4C9F70', borderColor: '#4C9F70' },
+  optionText: { color: '#4C9F70', fontWeight: '600', fontSize: 13, textAlign: 'center' },
+  optionTextSelected: { color: '#fff' },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: '#EAF4F4',
+  },
+  button: { backgroundColor: '#4C9F70', padding: 15, borderRadius: 10, alignItems: 'center' },
+  buttonDisabled: { opacity: 0.5 },
+  buttonText: { fontSize: 18, color: '#FFF', fontWeight: '600' },
+
+  /* modal */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 420,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#333', marginBottom: 8 },
+  modalScore: { fontSize: 36, fontWeight: '800', color: '#4C9F70', marginBottom: 8 },
+  modalPrediction: { fontSize: 16, fontWeight: '600', color: '#4C9F70', marginBottom: 8 },
+  modalNote: { fontSize: 14, color: '#555' },
 });

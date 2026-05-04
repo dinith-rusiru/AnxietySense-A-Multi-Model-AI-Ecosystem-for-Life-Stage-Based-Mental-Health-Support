@@ -1,0 +1,17 @@
+Flask
+tensorflow
+numpy
+pandas
+opencv-python
+Werkzeug
+protobuf
+h5py
+mtcnn
+retina-face
+gdown
+tqdm
+Pillow
+tf-keras
+deepface
+scikit-learn
+joblib

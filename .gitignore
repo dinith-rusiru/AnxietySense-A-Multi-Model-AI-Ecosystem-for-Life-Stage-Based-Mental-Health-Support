@@ -60,4 +60,8 @@ yarn-error.*
 
 backend2/temp_audio/
 
+backend2/stored_data/
+
 backend
+backend/stored_data/
+backend2/stored_data/

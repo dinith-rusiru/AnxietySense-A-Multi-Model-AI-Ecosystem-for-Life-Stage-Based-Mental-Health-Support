@@ -1,53 +1,58 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
-
-const CATEGORIES = [ 'Elders'];
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 export default function HomeScreen({ navigation }) {
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Text style={styles.appName}>AnxieApp</Text>
-        <Text style={styles.subtitle}>Select your category to begin</Text>
+  const categories = ["Child", "Young Elder", "Pregnant Woman", "Elders"];
 
-        {CATEGORIES.map((cat) => (
-          <TouchableOpacity
-            key={cat}
-            style={styles.button}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (cat === 'Elders') {
-                navigation.navigate('ElderView');
-              } else {
-                navigation.navigate('Questionnaireee', { category: cat });
-              }
-            }}
-          >
-            <Text style={styles.buttonText}>{cat}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </SafeAreaView>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Select Category</Text>
+      {categories.map((cat, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.button}
+          onPress={() => {
+            if (cat === 'Elders') {
+              navigation.navigate('ElderView');
+            } else {
+              navigation.navigate('Questionnaire', { category: cat });
+            }
+          }}
+        >
+          <Text style={styles.buttonText}>{cat}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: '#EAF4F4' },
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  appName:   { fontSize: 36, fontWeight: '800', color: '#4C9F70', marginBottom: 8 },
-  subtitle:  { fontSize: 16, color: '#666', marginBottom: 40 },
+  container: {
+    flex: 1,
+    backgroundColor: '#EAF4F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 28,
+    marginBottom: 30,
+    fontWeight: 'bold',
+    color: '#333',
+  },
   button: {
     backgroundColor: '#4C9F70',
-    padding: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    width: '85%',
+    padding: 15,
+    marginVertical: 10,
+    borderRadius: 10,
+    width: '80%',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
-  buttonText: { fontSize: 18, color: '#FFF', fontWeight: '700' },
+  buttonText: {
+    fontSize: 18,
+    color: '#FFF',
+    fontWeight: '600',
+  },
 });
+
+

@@ -1,43 +1,51 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// CameraScreen.js
-// ─────────────────────────────────────────────────────────────────────────────
 import React, { useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Platform, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImageManipulator from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
 
-const ML_SERVER = 'http://127.0.0.1:5000';
-export function CameraScreen({ navigation }) {
+export default function CameraScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef(null);
-  const [photo, setPhoto]       = useState(null);
+  const [photo, setPhoto] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
 
-  if (!permission) return <View style={cs.center}><ActivityIndicator size="large" color="#4C9F70" /></View>;
-  if (!permission.granted) return (
-    <View style={cs.center}>
-      <Text style={cs.text}>We need your permission to use the camera.</Text>
-      <TouchableOpacity style={cs.button} onPress={requestPermission}><Text style={cs.buttonText}>Grant Permission</Text></TouchableOpacity>
-    </View>
-  );
+  if (!permission) {
+    // permissions are still loading
+    return <View style={styles.center}><Text>Loading camera permissions…</Text></View>;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.text}>We need your permission to show the camera</Text>
+        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+          <Text style={styles.buttonText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const takePhoto = async () => {
     try {
-      const raw = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-      const m   = await ImageManipulator.manipulateAsync(raw.uri, [{ resize: { width: 640 } }], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG });
-      setPhoto(m);
-    } catch (e) { console.warn('takePhoto error:', e); }
+      if (cameraRef.current) {
+        const raw = await cameraRef.current.takePictureAsync({
+          quality: 0.8,
+        });
+        // Convert to JPEG (iOS may capture HEIC)
+        const manipulated = await ImageManipulator.manipulateAsync(
+          raw.uri,
+          [{ resize: { width: 640 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+        );
+        setPhoto(manipulated);
+      }
+    } catch (e) {
+      console.warn('Failed to take photo:', e);
+    }
   };
 
-  const pickFromGallery = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
-      if (!result.canceled && result.assets?.length > 0) {
-        const m = await ImageManipulator.manipulateAsync(result.assets[0].uri, [{ resize: { width: 640 } }], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG });
-        setPhoto(m);
-      }
-    } catch (e) { console.warn('Gallery error:', e); }
+  const clearPhoto = () => {
+    setPhoto(null);
   };
 
   const analyzePhoto = async () => {
@@ -45,71 +53,113 @@ export function CameraScreen({ navigation }) {
     setAnalyzing(true);
     try {
       const formData = new FormData();
+
       if (Platform.OS === 'web') {
-        const res = await fetch(photo.uri); const blob = await res.blob();
-        formData.append('image', new File([blob], 'selfie.jpg', { type: 'image/jpeg' }));
+        const res = await fetch(photo.uri);
+        const blob = await res.blob();
+        const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
+        formData.append('image', file);
       } else {
-        formData.append('image', { uri: photo.uri, type: 'image/jpeg', name: 'selfie.jpg' });
+        formData.append('image', {
+          uri: photo.uri,
+          type: 'image/jpeg',
+          name: 'selfie.jpg',
+        });
       }
       formData.append('age', '60');
-      const response = await fetch(`${ML_SERVER}/predict-emotion-songs`, { method: 'POST', body: formData });
-      if (!response.ok) throw new Error(`Server error ${response.status}`);
+
+      const response = await fetch('http://127.0.0.1:5000/predict-emotion-songs', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Server responded ${response.status}: ${errText}`);
+      }
+
       const data = await response.json();
       navigation.navigate('Relax', {
         recommendedSongs: data.recommended_songs || [],
-        mood:             data.mood || '',
-        predictedAge:     data.predicted_age,
+        mood: data.mood || '',
+        predictedAge: data.predicted_age,
         teenageYearRange: data.teenage_year_range || '',
       });
-    } catch (e) {
-      Alert.alert('Error', e.message || 'Could not reach the prediction server.');
-    } finally { setAnalyzing(false); }
+    } catch (error) {
+      console.warn('Analyze error:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Could not reach the prediction server. Please check your connection.',
+      );
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   return (
-    <View style={cs.container}>
+    <View style={styles.container}>
       {!photo ? (
-        <>
-          <CameraView ref={cameraRef} style={cs.camera} facing="front" />
-          <View style={cs.controls}>
-            <TouchableOpacity style={cs.shutter} onPress={takePhoto}><Text style={cs.shutterText}>📸</Text></TouchableOpacity>
-            <TouchableOpacity style={[cs.button, { marginTop: 16 }]} onPress={pickFromGallery}><Text style={cs.buttonText}>Gallery</Text></TouchableOpacity>
-          </View>
-        </>
+        <CameraView
+          ref={cameraRef}
+          style={styles.camera}
+          facing="front"
+        />
       ) : (
-        <>
-          <View style={cs.previewContainer}>
-            <Image source={{ uri: photo.uri }} style={[cs.preview, { transform: [{ scaleX: -1 }] }]} />
-          </View>
-          <View style={cs.controls}>
-            {analyzing ? <ActivityIndicator size="large" color="#fff" /> : (
-              <View style={cs.actionRow}>
-                <TouchableOpacity style={cs.analyzeBtn} onPress={analyzePhoto}><Text style={cs.analyzeText}>Analyze</Text></TouchableOpacity>
-                <TouchableOpacity style={cs.button} onPress={() => setPhoto(null)}><Text style={cs.buttonText}>Retake</Text></TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </>
+        <View style={styles.previewContainer}>
+          <Image source={{ uri: photo?.uri }} style={[styles.preview, styles.unmirror]} />
+        </View>
       )}
+
+      <View style={styles.controls}>
+        {!photo ? (
+          <TouchableOpacity style={styles.shutter} onPress={takePhoto}>
+            <Text style={styles.shutterText}>Snap</Text>
+          </TouchableOpacity>
+        ) : analyzing ? (
+          <ActivityIndicator size="large" color="#fff" />
+        ) : (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.analyzeBtn} onPress={analyzePhoto}>
+              <Text style={styles.analyzeText}>Analyze</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={clearPhoto}>
+              <Text style={styles.buttonText}>Retake</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
-const cs = StyleSheet.create({
-  container:       { flex: 1, backgroundColor: '#000' },
-  camera:          { flex: 1 },
-  controls:        { position: 'absolute', bottom: 30, left: 0, right: 0, alignItems: 'center' },
-  shutter:         { width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  shutterText:     { fontSize: 32 },
-  center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#EAF4F4' },
-  text:            { color: '#333', marginBottom: 12, textAlign: 'center' },
-  button:          { backgroundColor: '#4C9F70', paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8 },
-  buttonText:      { color: '#fff', fontWeight: '600', fontSize: 15 },
-  previewContainer:{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
-  preview:         { width: '90%', height: '80%', resizeMode: 'contain', borderRadius: 12 },
-  analyzeBtn:      { backgroundColor: '#007AFF', paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8 },
-  analyzeText:     { color: '#fff', fontWeight: '700', fontSize: 15 },
-  actionRow:       { flexDirection: 'row', gap: 16, alignItems: 'center' },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  camera: { flex: 1 },
+  controls: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutter: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutterText: { fontWeight: 'bold' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
+  text: { color: '#333', marginBottom: 12, textAlign: 'center' },
+  button: { backgroundColor: '#4C9F70', paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8 },
+  buttonText: { color: '#fff', fontWeight: '600' },
+  previewContainer: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center', paddingBottom: 10 },
+  preview: { width: '90%', height: '80%', resizeMode: 'contain', borderRadius: 12 },
+  unmirror: { transform: [{ scaleX: -1 }] },
+  analyzeBtn: { backgroundColor: '#007AFF', paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8 },
+  analyzeText: { color: '#fff', fontWeight: '700' },
+  actionRow: { flexDirection: 'row', gap: 16, alignItems: 'center'},
 });
-
-export default CameraScreen;
