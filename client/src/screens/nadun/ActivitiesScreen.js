@@ -51,7 +51,7 @@ export default function ActivitiesScreen({ route, navigation }) {
             key={index}
             style={styles.activityCard}
             onPress={() =>
-              navigation.navigate("ActivityDetail", { activityName: activity })
+              navigation.navigate("ActivityDetail1", { activityName: activity })
             }
           >
             <View style={styles.activityIcon}>
