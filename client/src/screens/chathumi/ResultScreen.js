@@ -103,24 +103,59 @@ else if (voice_score !== null) mode = "Voice Only";
 else if (questionnaire_score !== null) mode = "Questionnaire Only";
 
 const explanations = {
-"Minimal Anxiety":
-"Your responses suggest good emotional balance. You are managing everyday stress well.",
-"Mild Anxiety":
-"Your responses indicate mild anxiety, often linked to routine emotional or physical changes.",
-"Moderate Anxiety":
-"Your answers show noticeable anxiety that may affect focus, rest, or emotional comfort.",
-"Severe Anxiety":
-"Your responses suggest high anxiety levels. Professional emotional support may be helpful.",
+  "Minimal Anxiety":
+    "Your responses suggest that you're feeling emotionally balanced and generally coping well with daily life. Occasional stress is normal, but you seem to manage it effectively and maintain a stable mindset.",
+
+  "Mild Anxiety":
+    "Your responses indicate mild anxiety, which can appear during daily responsibilities or changes. While it’s manageable, taking small steps to relax and recharge can help prevent it from building up.",
+
+  "Moderate Anxiety":
+    "Your answers show a noticeable level of anxiety that may be affecting your focus, sleep, or overall comfort. It may help to actively practice stress management techniques and create time for rest and self-care.",
+
+  "Severe Anxiety":
+    "Your responses suggest a high level of anxiety that could be impacting your daily functioning and emotional well-being. Seeking support from a professional or trusted person is strongly recommended, along with consistent calming practices.",
 };
 
 const activities = {
-"Minimal Anxiety": ["Gratitude journaling", "Slow breathing (5 minutes)"],
-"Mild Anxiety": ["Guided breathing exercises", "Light stretching or walking"],
-"Moderate Anxiety": ["Short guided meditation", "Consistent sleep routine"],
-"Severe Anxiety": [
-"Speak with a mental health professional",
-"Grounding exercises (5-4-3-2-1)",
-],
+  "Minimal Anxiety": [
+    "Gratitude journaling (write 3 things you're thankful for)",
+    "5-minute deep breathing exercise",
+    "Spend time in nature or fresh air",
+    "Listen to calming music",
+    "Maintain a healthy daily routine",
+  ],
+
+  "Mild Anxiety": [
+    "Guided breathing exercises (box breathing)",
+    "Light stretching or a short walk",
+    "Reduce screen time before sleep",
+    "Talk to a friend or loved one",
+    "Practice mindfulness for 5–10 minutes",
+  ],
+
+  "Moderate Anxiety": [
+    "Short guided meditation (10–15 minutes)",
+    "Maintain a consistent sleep schedule",
+    "Write down your worries to release them",
+    "Limit caffeine and stimulants",
+    "Try grounding techniques (focus on surroundings)",
+    "Engage in a relaxing hobby (drawing, reading)",
+  ],
+
+  "Severe Anxiety": [
+    "Speak with a mental health professional",
+    "Practice grounding exercises (5-4-3-2-1 method)",
+    "Reach out to a trusted friend or family member",
+    "Follow a structured daily routine",
+    "Avoid isolation—stay connected with others",
+    "Try slow breathing (inhale 4s, exhale 6s)",
+    "Consider professional counseling or therapy",
+  ],
+};
+
+const getRandomActivities = (level, count = 3) => {
+  const list = activities[level] || [];
+  return list.sort(() => 0.5 - Math.random()).slice(0, count);
 };
 
 return (

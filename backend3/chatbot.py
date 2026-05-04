@@ -22,9 +22,9 @@ app.add_middleware(
 
 # Load the saved ML model and vectorizer
 try:
-    classifier = joblib.load(r'C:\Users\LENOVO LOQ\Desktop\test\backend3\model\chatbot model\emotion_model_chatbot.pkl')
-    vectorizer = joblib.load(r'C:\Users\LENOVO LOQ\Desktop\test\backend3\model\chatbot model\vectorizer.pkl')
-    with open(r'C:\Users\LENOVO LOQ\Desktop\test\backend3\model\chatbot model\emotions_mapping.json', 'r') as f:
+    classifier = joblib.load(r'D:\projects\New folder (3)\test\backend3\model\chatbot model\emotion_model_chatbot.pkl')
+    vectorizer = joblib.load(r'D:\projects\New folder (3)\test\backend3\model\chatbot model\vectorizer.pkl')
+    with open(r'D:\projects\New folder (3)\test\backend3\model\chatbot model\emotions_mapping.json', 'r') as f:
         emotions_mapping = json.load(f)
 except Exception as e:
     print("Error loading models:", e)

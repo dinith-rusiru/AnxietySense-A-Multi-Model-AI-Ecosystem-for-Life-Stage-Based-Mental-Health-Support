@@ -1,246 +1,189 @@
 /**
- * activityMapping.js
- *
- * Defines which activities are recommended for each anxiety level,
- * and provides helper to de-prioritise recently completed ones.
+ * Activity Mapping Configuration
+ * Maps anxiety levels to recommended activities with metadata.
  */
 
-const ALL_ACTIVITIES = {
+const ACTIVITY_MAPPING = {
   Minimal: [
     {
       id: 'free_drawing',
       name: 'Free Drawing',
       type: 'drawing',
-      description: 'Express yourself through free-form drawing. Let your creativity flow.',
-      duration: '10–15 min',
+      description: 'Express yourself freely on a blank canvas using your finger.',
+      duration: '10 min',
       icon: '🎨',
     },
     {
       id: 'gratitude_journal',
       name: 'Gratitude Journal',
       type: 'journal',
-      description: 'Write 3 things you are grateful for today to cultivate positivity.',
-      duration: '5–10 min',
-      icon: '📓',
-    },
-    {
-      id: 'nature_sounds',
-      name: 'Nature Sound Therapy',
-      type: 'nature_sounds',
-      description: 'Listen to calming nature sounds like rain, forest, or ocean waves.',
-      duration: '10–20 min',
-      icon: '🌿',
-    },
-    {
-      id: 'breathing_basic',
-      name: 'Basic Breathing',
-      type: 'breathing',
-      config: { inhale: 4, hold: 2, exhale: 4, cycles: 5 },
-      description: 'Simple 4-2-4 breathing to calm your mind and body.',
+      description: 'Write down 3 things you are grateful for today.',
       duration: '5 min',
-      icon: '🌬️',
+      icon: '📝',
     },
     {
       id: 'music_therapy',
       name: 'Music Therapy',
       type: 'music_therapy',
-      description: 'Take a selfie and receive personalised music recommendations based on your mood.',
-      duration: '10–20 min',
-      icon: '🎵',
+      description: 'Take a photo and get personalized song recommendations based on your mood.',
+      duration: 'Varies',
+      icon: '🎶',
     },
   ],
-
   Mild: [
     {
-      id: 'breathing_478',
-      name: '4-7-8 Breathing',
+      id: 'breathing_4_6',
+      name: '4-6 Breathing',
       type: 'breathing',
-      config: { inhale: 4, hold: 7, exhale: 8, cycles: 4 },
-      description: 'The 4-7-8 technique helps reduce anxiety quickly and promote calm.',
-      duration: '5–8 min',
+      description: 'A calming breathing exercise: inhale for 4s, hold 2s, exhale for 6s.',
+      duration: '5 min',
       icon: '🌬️',
+      config: { inhale: 4, hold: 2, exhale: 6, cycles: 5 },
     },
     {
-      id: 'prompt_drawing',
-      name: 'Guided Drawing',
+      id: 'colouring_templates',
+      name: 'Colouring Templates',
+      type: 'colouring',
+      description: 'Tap sections of calming templates to fill them with colour.',
+      duration: '10 min',
+      icon: '🖌️',
+    },
+    {
+      id: 'progressive_muscle',
+      name: 'Progressive Muscle Relaxation',
+      type: 'muscle_relaxation',
+      description: 'Step-by-step guide to tense, hold, and relax each muscle group.',
+      duration: '10 min',
+      icon: '💪',
+    },
+    {
+      id: 'music_therapy',
+      name: 'Music Therapy',
+      type: 'music_therapy',
+      description: 'Take a photo and get personalized song recommendations based on your mood.',
+      duration: 'Varies',
+      icon: '🎶',
+    },
+  ],
+  Moderate: [
+    {
+      id: 'extended_breathing',
+      name: 'Extended Breathing',
+      type: 'breathing',
+      description: 'Deep breathing exercise: inhale 5s, hold 5s, exhale 5s.',
+      duration: '8 min',
+      icon: '🌬️',
+      config: { inhale: 5, hold: 5, exhale: 5, cycles: 6 },
+    },
+    {
+      id: 'structured_drawing',
+      name: 'Structured Drawing',
       type: 'prompt_drawing',
+      description: 'Follow guided prompts to draw structured patterns.',
+      duration: '10 min',
+      icon: '✏️',
       prompts: [
         'Draw how you feel today',
         'Draw a place that makes you calm',
         'Draw something that makes you smile',
       ],
-      description: 'Follow guided prompts to draw and express your inner feelings.',
-      duration: '15–20 min',
-      icon: '✏️',
     },
     {
-      id: 'colouring',
-      name: 'Colouring Activity',
-      type: 'colouring',
-      description: 'Tap to colour the grid. A simple, mindful colouring exercise.',
-      duration: '10–15 min',
-      icon: '🖍️',
+      id: 'prompts_drawing',
+      name: 'Prompts Drawing',
+      type: 'prompt_drawing',
+      description: 'Creative drawing guided by mindfulness prompts.',
+      duration: '10 min',
+      icon: '🖼️',
+      prompts: [
+        'Draw your safe space',
+        'Draw what peace looks like to you',
+        'Draw a happy memory',
+      ],
     },
     {
-      id: 'gratitude_journal',
-      name: 'Gratitude Journal',
-      type: 'journal',
-      description: 'Write 3 things you are grateful for today to cultivate positivity.',
-      duration: '5–10 min',
-      icon: '📓',
-    },
-    {
-      id: 'nature_sounds',
-      name: 'Nature Sound Therapy',
-      type: 'nature_sounds',
-      description: 'Listen to calming nature sounds like rain, forest, or ocean waves.',
-      duration: '10–20 min',
-      icon: '🌿',
-    },
-    {
-      id: 'music_therapy',
-      name: 'Music Therapy',
-      type: 'music_therapy',
-      description: 'Take a selfie and receive personalised music recommendations based on your mood.',
-      duration: '10–20 min',
-      icon: '🎵',
-    },
-  ],
-
-  Moderate: [
-    {
-      id: 'muscle_relaxation',
-      name: 'Progressive Muscle Relaxation',
-      type: 'muscle_relaxation',
-      description: 'Systematically tense and relax muscle groups to release physical tension.',
-      duration: '15–20 min',
-      icon: '💪',
-    },
-    {
-      id: 'breathing_box',
-      name: 'Box Breathing',
-      type: 'breathing',
-      config: { inhale: 4, hold: 4, exhale: 4, cycles: 6 },
-      description: 'Box breathing (4-4-4) used by professionals to manage stress.',
-      duration: '8–10 min',
-      icon: '🌬️',
-    },
-    {
-      id: 'meditation',
+      id: 'body_scan',
       name: 'Body Scan Meditation',
       type: 'meditation',
-      description: 'A guided body scan to bring awareness and release tension from head to toe.',
-      duration: '15–20 min',
+      description: 'A guided meditation to scan and relax each part of your body.',
+      duration: '10 min',
       icon: '🧘',
     },
     {
-      id: 'prompt_drawing',
-      name: 'Guided Drawing',
-      type: 'prompt_drawing',
-      prompts: [
-        'Draw your worries as shapes',
-        'Draw a safe place',
-        'Draw what peace looks like to you',
-      ],
-      description: 'Express and process emotions through guided drawing prompts.',
-      duration: '15–20 min',
-      icon: '✏️',
-    },
-    {
-      id: 'nature_sounds',
-      name: 'Nature Sound Therapy',
-      type: 'nature_sounds',
-      description: 'Listen to calming nature sounds like rain, forest, or ocean waves.',
-      duration: '10–20 min',
-      icon: '🌿',
-    },
-    {
       id: 'music_therapy',
       name: 'Music Therapy',
       type: 'music_therapy',
-      description: 'Take a selfie and receive personalised music recommendations based on your mood.',
-      duration: '10–20 min',
-      icon: '🎵',
+      description: 'Take a photo and get personalized song recommendations based on your mood.',
+      duration: 'Varies',
+      icon: '🎶',
     },
   ],
-
   Severe: [
     {
-      id: 'breathing_deep',
-      name: 'Deep Breathing',
+      id: 'emergency_breathing',
+      name: 'Emergency Breathing',
       type: 'breathing',
-      config: { inhale: 5, hold: 2, exhale: 7, cycles: 8 },
-      description: 'Extended slow breathing to immediately lower your nervous system activation.',
-      duration: '10–12 min',
-      icon: '🌬️',
+      description: 'Quick calming breaths to reduce acute anxiety: inhale 3s, exhale 3s.',
+      duration: '3 min',
+      icon: '🆘',
+      config: { inhale: 3, hold: 1, exhale: 3, cycles: 8 },
     },
     {
-      id: 'muscle_relaxation',
-      name: 'Progressive Muscle Relaxation',
-      type: 'muscle_relaxation',
-      description: 'Systematically tense and relax muscle groups to release physical tension.',
-      duration: '15–20 min',
-      icon: '💪',
-    },
-    {
-      id: 'meditation',
-      name: 'Body Scan Meditation',
-      type: 'meditation',
-      description: 'A guided body scan to bring awareness and release tension from head to toe.',
-      duration: '15–20 min',
-      icon: '🧘',
+      id: 'simple_colouring',
+      name: 'Simple Colouring',
+      type: 'colouring',
+      description: 'Simple shapes to colour for immediate calm.',
+      duration: '5 min',
+      icon: '🎨',
     },
     {
       id: 'nature_sounds',
       name: 'Nature Sound Therapy',
       type: 'nature_sounds',
-      description: 'Listen to calming nature sounds like rain, forest, or ocean waves.',
-      duration: '10–20 min',
+      description: 'Listen to calming nature sounds: rain, forest, or ocean.',
+      duration: '10 min',
       icon: '🌿',
-    },
-    {
-      id: 'gratitude_journal',
-      name: 'Gratitude Journal',
-      type: 'journal',
-      description: 'Write 3 things you are grateful for today to cultivate positivity.',
-      duration: '5–10 min',
-      icon: '📓',
     },
     {
       id: 'music_therapy',
       name: 'Music Therapy',
       type: 'music_therapy',
-      description: 'Take a selfie and receive personalised music recommendations based on your mood.',
-      duration: '10–20 min',
-      icon: '🎵',
+      description: 'Take a photo and get personalized song recommendations based on your mood.',
+      duration: 'Varies',
+      icon: '🎶',
     },
   ],
 };
 
 /**
- * Returns the list of activities for the given anxiety level.
- * Defaults to Minimal if level is unrecognised.
+ * Returns recommended activities for a given anxiety level.
+ * @param {string} anxietyLevel - One of: Minimal, Mild, Moderate, Severe
+ * @returns {Array} activities
  */
 export function getActivitiesForLevel(anxietyLevel) {
-  return ALL_ACTIVITIES[anxietyLevel] || ALL_ACTIVITIES['Minimal'];
+  if (!ACTIVITY_MAPPING[anxietyLevel]) {
+    console.warn(`Unknown anxiety level "${anxietyLevel}", falling back to Minimal`);
+  }
+  return ACTIVITY_MAPPING[anxietyLevel] || ACTIVITY_MAPPING['Minimal'];
 }
 
 /**
- * Moves recently completed activities (within last 7 days) to the bottom
- * so fresh suggestions appear first.
+ * Reorders activities so recently completed ones appear at the bottom.
+ * @param {Array} activities - list of activity objects
+ * @param {Array} history - list of completed activity records
+ * @returns {Array} reordered activities
  */
 export function filterRecentActivities(activities, history) {
-  const now = new Date();
+  const twelveHoursAgo = Date.now() - 12 * 60 * 60 * 1000;
   const recentNames = new Set(
-    history
-      .filter((r) => {
-        const diff = (now - new Date(r.completed_at)) / (1000 * 60 * 60 * 24);
-        return diff < 7;
-      })
-      .map((r) => r.activity_name),
+    (history || [])
+      .filter((h) => new Date(h.completed_at).getTime() > twelveHoursAgo)
+      .map((h) => h.activity_name),
   );
 
-  const fresh   = activities.filter((a) => !recentNames.has(a.name));
-  const recent  = activities.filter((a) =>  recentNames.has(a.name));
+  const fresh = activities.filter((a) => !recentNames.has(a.name));
+  const recent = activities.filter((a) => recentNames.has(a.name));
   return [...fresh, ...recent];
 }
+
+export default ACTIVITY_MAPPING;
