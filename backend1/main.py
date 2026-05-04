@@ -20,3 +20,4 @@ app.include_router(
 @app.get('/')
 def root():
     return {'status': 'API running'}
+    

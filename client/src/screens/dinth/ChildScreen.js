@@ -21,6 +21,7 @@ export default function ChildScreen({ navigation }) {
   const [isRealTime, setIsRealTime] = useState(false);
   const [captured,   setCaptured]   = useState(null);
   const [loading,    setLoading]    = useState(false);
+  const [faceError,  setFaceError]  = useState(null);
 
   useEffect(() => {
     startCamera('user');
@@ -29,7 +30,7 @@ export default function ChildScreen({ navigation }) {
 
   const startCamera = async (facingMode = 'user') => {
     stopRealTime(); stopCamera();
-    setCamReady(false); setLiveResult(null); setError(null);
+    setCamReady(false); setLiveResult(null); setError(null); setFaceError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -62,9 +63,20 @@ export default function ChildScreen({ navigation }) {
     return canvas.toDataURL('image/jpeg', 0.85);
   }, [facing]);
 
+  const handleResult = (result) => {
+    if (result?.success && result?.data) {
+      setLiveResult(result.data);
+      setFaceError(null);
+      return { ok: true };
+    }
+    setFaceError(result?.error || 'No face detected');
+    setLiveResult(null);
+    return { ok: false };
+  };
+
   const startRealTime = () => {
     if (!camReady) return;
-    setIsRealTime(true); setLiveResult(null);
+    setIsRealTime(true); setLiveResult(null); setFaceError(null);
     intervalRef.current = setInterval(async () => {
       if (predicting) return;
       const frame = captureFrame();
@@ -72,7 +84,7 @@ export default function ChildScreen({ navigation }) {
       try {
         setPredicting(true);
         const result = await predictAnxiety(frame);
-        if (result?.data) setLiveResult(result.data);
+        handleResult(result);
       } catch (e) {
         console.warn('realtime predict error:', e.message);
       } finally { setPredicting(false); }
@@ -86,6 +98,7 @@ export default function ChildScreen({ navigation }) {
 
   const takePicture = () => {
     stopRealTime();
+    setFaceError(null);
     const f = captureFrame();
     if (f) setCaptured(f);
   };
@@ -94,7 +107,15 @@ export default function ChildScreen({ navigation }) {
     if (!captured) return;
     try {
       setLoading(true);
+      setFaceError(null);
       const result = await predictAnxiety(captured);
+      const { ok } = handleResult(result);
+
+      if (!ok) {
+        setLoading(false);
+        return;
+      }
+
       stopCamera();
       navigation.navigate('ResultScreen', {
         cameraResult: result.data,
@@ -108,6 +129,7 @@ export default function ChildScreen({ navigation }) {
 
   const choosePhoto = () => {
     stopRealTime();
+    setFaceError(null);
     const input  = document.createElement('input');
     input.type   = 'file';
     input.accept = 'image/*';
@@ -118,6 +140,12 @@ export default function ChildScreen({ navigation }) {
       reader.readAsDataURL(file);
     };
     input.click();
+  };
+
+  const resetAll = () => {
+    setCaptured(null);
+    setFaceError(null);
+    startCamera(facing);
   };
 
   if (error) return (
@@ -145,7 +173,7 @@ export default function ChildScreen({ navigation }) {
             <video ref={videoRef} autoPlay playsInline muted
               style={{ width: '100%', height: '100%', objectFit: 'cover', transform: facing === 'user' ? 'scaleX(-1)' : 'none' }} />
 
-            {/* Oval guide */}
+            {/* Oval face guide */}
             <div style={S.overlay}>
               <div style={S.oval} />
               <span style={S.guideText}>👤 Align face here</span>
@@ -181,6 +209,14 @@ export default function ChildScreen({ navigation }) {
               </div>
             )}
 
+            {/* Live no-face warning */}
+            {isRealTime && faceError && !liveResult && (
+              <div style={S.noFaceBox}>
+                <span style={{ fontSize: 28 }}>⚠️</span>
+                <span style={S.noFaceText}>{faceError}</span>
+              </div>
+            )}
+
             {!isRealTime && camReady && (
               <div style={S.hint}>
                 <span style={{ color: '#fff', fontSize: 12 }}>Press <b>▶ Live</b> for real-time detection</span>
@@ -192,12 +228,20 @@ export default function ChildScreen({ navigation }) {
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
+      {/* Face / classifier error message */}
+      {faceError && (
+        <View style={styles.faceErrorBox}>
+          <Text style={styles.faceErrorText}>⚠️ {faceError}</Text>
+          <Text style={styles.faceErrorSub}>Please make sure the child's face is clearly visible.</Text>
+        </View>
+      )}
+
       <View style={styles.btnArea}>
-        {loading ? (
+        {loading ? ( 
           <ActivityIndicator size='large' color='#3498DB' />
         ) : captured ? (
           <View style={styles.row}>
-            <TouchableOpacity style={styles.btnRed} onPress={() => { setCaptured(null); startCamera(facing); }}>
+            <TouchableOpacity style={styles.btnRed} onPress={resetAll}>
               <Text style={styles.btnText}>🔄 Retake</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.btnGreen} onPress={proceedToResult}>
@@ -206,7 +250,10 @@ export default function ChildScreen({ navigation }) {
           </View>
         ) : (
           <View style={styles.row}>
-            <TouchableOpacity style={styles.btnGray} onPress={() => { const nf = facing === 'user' ? 'environment' : 'user'; setFacing(nf); startCamera(nf); }}>
+            <TouchableOpacity style={styles.btnGray} onPress={() => {
+              const nf = facing === 'user' ? 'environment' : 'user';
+              setFacing(nf); startCamera(nf);
+            }}>
               <Text style={styles.btnText}>🔃</Text>
             </TouchableOpacity>
             {isRealTime ? (
@@ -246,25 +293,30 @@ const S = {
   barPct    : { color: '#aaa', fontSize: 10, width: 35, textAlign: 'right' },
   spinner   : { position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', padding: '3px 8px', borderRadius: 10 },
   hint      : { position: 'absolute', bottom: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' },
+  noFaceBox : { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(231,76,60,0.45)', pointerEvents: 'none' },
+  noFaceText: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginTop: 8, textAlign: 'center', padding: '0 20px' },
 };
 
 const styles = StyleSheet.create({
-  container  : { flex: 1, backgroundColor: '#1a1a2e', alignItems: 'center', padding: 12 },
-  center     : { flex: 1, backgroundColor: '#1a1a2e', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  backBtn    : { alignSelf: 'flex-start', padding: 8 },
-  backText   : { color: '#3498DB', fontSize: 14, fontWeight: 'bold' },
-  title      : { fontSize: 20, fontWeight: 'bold', color: '#fff', marginTop: 4 },
-  subtitle   : { fontSize: 12, color: '#3498DB', fontWeight: 'bold', marginBottom: 10 },
-  cameraBox  : { width: '100%', flex: 1, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: '#3498DB', marginBottom: 10 },
-  btnArea    : { width: '100%', alignItems: 'center', paddingBottom: 8 },
-  row        : { flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
-  btnBlue    : { backgroundColor: '#3498DB', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
-  btnGreen   : { backgroundColor: '#2ECC71', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
-  btnRed     : { backgroundColor: '#E74C3C', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
-  btnOrange  : { backgroundColor: '#E67E22', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
-  btnGray    : { backgroundColor: '#555', paddingVertical: 13, paddingHorizontal: 18, borderRadius: 12 },
-  btnPurple  : { backgroundColor: '#9B59B6', paddingVertical: 13, paddingHorizontal: 18, borderRadius: 12 },
-  btnDisabled: { backgroundColor: '#333' },
-  btnText    : { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  errorText  : { color: '#E74C3C', fontSize: 15, textAlign: 'center', marginBottom: 20 },
+  container    : { flex: 1, backgroundColor: '#1a1a2e', alignItems: 'center', padding: 12 },
+  center       : { flex: 1, backgroundColor: '#1a1a2e', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  backBtn      : { alignSelf: 'flex-start', padding: 8 },
+  backText     : { color: '#3498DB', fontSize: 14, fontWeight: 'bold' },
+  title        : { fontSize: 20, fontWeight: 'bold', color: '#fff', marginTop: 4 },
+  subtitle     : { fontSize: 12, color: '#3498DB', fontWeight: 'bold', marginBottom: 10 },
+  cameraBox    : { width: '100%', flex: 1, borderRadius: 16, overflow: 'hidden', borderWidth: 2, borderColor: '#3498DB', marginBottom: 10 },
+  btnArea      : { width: '100%', alignItems: 'center', paddingBottom: 8 },
+  row          : { flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
+  btnBlue      : { backgroundColor: '#3498DB', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
+  btnGreen     : { backgroundColor: '#2ECC71', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
+  btnRed       : { backgroundColor: '#E74C3C', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
+  btnOrange    : { backgroundColor: '#E67E22', paddingVertical: 13, paddingHorizontal: 22, borderRadius: 12 },
+  btnGray      : { backgroundColor: '#555', paddingVertical: 13, paddingHorizontal: 18, borderRadius: 12 },
+  btnPurple    : { backgroundColor: '#9B59B6', paddingVertical: 13, paddingHorizontal: 18, borderRadius: 12 },
+  btnDisabled  : { backgroundColor: '#333' },
+  btnText      : { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  errorText    : { color: '#E74C3C', fontSize: 15, textAlign: 'center', marginBottom: 20 },
+  faceErrorBox : { width: '100%', backgroundColor: '#3d1515', borderRadius: 10, padding: 10, marginBottom: 8, borderWidth: 1, borderColor: '#E74C3C' },
+  faceErrorText: { color: '#E74C3C', fontWeight: 'bold', fontSize: 13, textAlign: 'center' },
+  faceErrorSub : { color: '#aaa', fontSize: 11, textAlign: 'center', marginTop: 3 },
 });

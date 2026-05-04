@@ -25,6 +25,15 @@ export default function ResultScreen({ navigation, route }) {
 
       {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
 
+      {/* Classifier confidence pill */}
+      {cameraResult.classifier_conf != null && (
+        <View style={styles.classifierPill}>
+          <Text style={styles.classifierPillText}>
+            ✅ Child verified · {cameraResult.classifier_conf}% confidence
+          </Text>
+        </View>
+      )}
+
       {/* Anxiety badge */}
       <View style={[styles.badge, { backgroundColor: lvl.color }]}>
         <Text style={styles.badgeEmoji}>{lvl.emoji}</Text>
@@ -58,7 +67,7 @@ export default function ResultScreen({ navigation, route }) {
         ))}
       </View>
 
-      {/* Next step info */}
+      {/* Next step */}
       <View style={[styles.card, { borderLeftWidth: 4, borderLeftColor: '#3498DB' }]}>
         <Text style={styles.cardTitle}>NEXT STEP</Text>
         <Text style={styles.nextText}>
@@ -85,30 +94,35 @@ export default function ResultScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  container  : { alignItems: 'center', padding: 16, paddingBottom: 40 },
-  backBtn    : { alignSelf: 'flex-start', padding: 4, marginBottom: 8 },
-  backText   : { color: '#3498DB', fontSize: 14, fontWeight: 'bold' },
-  title      : { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  step       : { fontSize: 12, color: '#3498DB', fontWeight: 'bold', marginBottom: 16 },
-  image      : { width: 130, height: 130, borderRadius: 65, marginBottom: 16, borderWidth: 3, borderColor: '#3498DB' },
-  badge      : { width: '100%', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 14 },
-  badgeEmoji : { fontSize: 44, marginBottom: 6 },
-  badgeLabel : { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  badgeScore : { fontSize: 15, color: 'rgba(255,255,255,0.88)', marginTop: 4 },
-  progressBg : { width: '100%', height: 10, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 5, marginTop: 12, overflow: 'hidden' },
-  progressFill:{ height: '100%', backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: 5 },
-  card       : { width: '100%', backgroundColor: '#16213e', borderRadius: 14, padding: 16, marginBottom: 14 },
-  cardTitle  : { fontSize: 11, color: '#aaa', marginBottom: 10, letterSpacing: 1.2 },
-  emotion    : { fontSize: 34, fontWeight: 'bold', textAlign: 'center' },
-  confidence : { color: '#aaa', textAlign: 'center', marginTop: 4, fontSize: 13 },
-  barRow     : { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  barLabel   : { width: 68, color: '#ddd', fontSize: 12 },
-  barBg      : { flex: 1, height: 10, backgroundColor: '#0f3460', borderRadius: 5, overflow: 'hidden', marginHorizontal: 8 },
-  barFill    : { height: '100%', borderRadius: 5 },
-  barPct     : { width: 38, color: '#aaa', fontSize: 11, textAlign: 'right' },
-  nextText   : { color: '#ddd', fontSize: 13, lineHeight: 22 },
-  btnRow     : { flexDirection: 'row', gap: 12, marginTop: 4 },
-  btnGreen   : { backgroundColor: '#2ECC71', paddingVertical: 13, paddingHorizontal: 24, borderRadius: 12 },
-  btnGray    : { backgroundColor: '#444', paddingVertical: 13, paddingHorizontal: 20, borderRadius: 12 },
-  btnText    : { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  container      : { alignItems: 'center', padding: 16, paddingBottom: 40 },
+  backBtn        : { alignSelf: 'flex-start', padding: 4, marginBottom: 8 },
+  backText       : { color: '#3498DB', fontSize: 14, fontWeight: 'bold' },
+  title          : { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
+  step           : { fontSize: 12, color: '#3498DB', fontWeight: 'bold', marginBottom: 16 },
+  image          : { width: 130, height: 130, borderRadius: 65, marginBottom: 12, borderWidth: 3, borderColor: '#3498DB' },
+
+  // Classifier pill
+  classifierPill    : { backgroundColor: '#2ECC7122', borderWidth: 1, borderColor: '#2ECC71', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 5, marginBottom: 14 },
+  classifierPillText: { color: '#2ECC71', fontSize: 12, fontWeight: 'bold' },
+
+  badge          : { width: '100%', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 14 },
+  badgeEmoji     : { fontSize: 44, marginBottom: 6 },
+  badgeLabel     : { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  badgeScore     : { fontSize: 15, color: 'rgba(255,255,255,0.88)', marginTop: 4 },
+  progressBg     : { width: '100%', height: 10, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 5, marginTop: 12, overflow: 'hidden' },
+  progressFill   : { height: '100%', backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: 5 },
+  card           : { width: '100%', backgroundColor: '#16213e', borderRadius: 14, padding: 16, marginBottom: 14 },
+  cardTitle      : { fontSize: 11, color: '#aaa', marginBottom: 10, letterSpacing: 1.2 },
+  emotion        : { fontSize: 34, fontWeight: 'bold', textAlign: 'center' },
+  confidence     : { color: '#aaa', textAlign: 'center', marginTop: 4, fontSize: 13 },
+  barRow         : { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  barLabel       : { width: 68, color: '#ddd', fontSize: 12 },
+  barBg          : { flex: 1, height: 10, backgroundColor: '#0f3460', borderRadius: 5, overflow: 'hidden', marginHorizontal: 8 },
+  barFill        : { height: '100%', borderRadius: 5 },
+  barPct         : { width: 38, color: '#aaa', fontSize: 11, textAlign: 'right' },
+  nextText       : { color: '#ddd', fontSize: 13, lineHeight: 22 },
+  btnRow         : { flexDirection: 'row', gap: 12, marginTop: 4 },
+  btnGreen       : { backgroundColor: '#2ECC71', paddingVertical: 13, paddingHorizontal: 24, borderRadius: 12 },
+  btnGray        : { backgroundColor: '#444', paddingVertical: 13, paddingHorizontal: 20, borderRadius: 12 },
+  btnText        : { color: '#fff', fontWeight: 'bold', fontSize: 15 },
 });

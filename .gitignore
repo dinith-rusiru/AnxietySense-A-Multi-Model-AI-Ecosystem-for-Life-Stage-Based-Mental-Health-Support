@@ -56,3 +56,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+
+backend2/temp_audio/
+
+backend
